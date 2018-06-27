@@ -3,6 +3,7 @@
 namespace KNVM {
 	void *Memory::get() const { return address; }
 	DWORD Memory::getAlign() const { return align; }
+	DWORD Memory::getSize() const { return size; }
 
 	Memory &Memory::operator=(Memory &mem) {
 		if (address != nullptr)

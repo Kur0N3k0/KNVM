@@ -19,6 +19,7 @@ namespace KNVM {
 		}
 		void *get() const;
 		DWORD getAlign() const;
+		DWORD getSize() const;
 		Memory &operator=(Memory &mem);
 		void *operator+(DWORD range);
 		void *operator-(DWORD range);

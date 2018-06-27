@@ -170,7 +170,7 @@ namespace KNVM {
 		if (lreg == 0)
 			setZF(reg);
 	}
-	void _Private Handler::or (DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;

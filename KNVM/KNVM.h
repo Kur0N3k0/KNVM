@@ -13,7 +13,7 @@ namespace KNVM {
 
 	public:
 		void test() {
-			Memory code(0x1000, PAGE_EXECUTE_READ, 4);
+			Memory code(0x1000, PAGE_READWRITE, 4);
 			Memory stack(0x1000, PAGE_READWRITE, 4);
 			this->cpu.execute(code, stack);
 		}

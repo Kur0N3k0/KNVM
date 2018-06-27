@@ -24,6 +24,9 @@ namespace KNVM {
 		RegisterList<> reg = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", "flags" };
 		Handler handler;
 
+	private:
+		void genTestcase(Memory &code);
+
 	public:
 		void execute(Memory &code, Memory &stack);
 		DispatchInfo *dispatch(Register<> &pc, Memory &code);
