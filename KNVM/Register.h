@@ -19,16 +19,47 @@ namespace KNVM {
 		void set(DWORD val) { this->val = val; }
 		bool operator==(nType name) { return this->name == name; }
 		bool operator!=(nType name) { return this->name != name; }
+		bool operator==(DWORD val) { return this->val == val; }
+		bool operator!=(DWORD val) { return this->val != val; }
 		bool operator==(Register<nType, default_val> &reg) { return this->val == reg.val; }
 		bool operator!=(Register<nType, default_val> &reg) { return this->val != reg.val; }
-		DWORD operator+(DWORD val) { return this->val + val; }
-		DWORD operator-(DWORD val) { return (this->val - val); }
+
 		DWORD operator++() { return this->val++; }
 		DWORD operator++(int) { return ++this->val; }
 		DWORD operator--() { return this->val--; }
 		DWORD operator--(int) { return --this->val; }
+
+		DWORD operator+(DWORD val) { return this->val + val; }
+		DWORD operator-(DWORD val) { return this->val - val; }
+		DWORD operator*(DWORD val) { return this->val * val; }
+		DWORD operator/(DWORD val) { return this->val / val; }
+		DWORD operator&(DWORD val) { return this->val & val; }
+		DWORD operator|(DWORD val) { return this->val | val; }
+		DWORD operator^(DWORD val) { return this->val ^ val; }
+		DWORD operator+(Register<nType, default_val> & val) { return this->val + val.val; }
+		DWORD operator-(Register<nType, default_val> & val) { return this->val - val.val; }
+		DWORD operator*(Register<nType, default_val> & val) { return this->val * val.val; }
+		DWORD operator/(Register<nType, default_val> & val) { return this->val / val.val; }
+		DWORD operator&(Register<nType, default_val> & val) { return this->val & val.val; }
+		DWORD operator|(Register<nType, default_val> & val) { return this->val | val.val; }
+		DWORD operator^(Register<nType, default_val> & val) { return this->val ^ val.val; }
+		
 		Register<nType, default_val> &operator+=(DWORD val) { this->val += val; return *this; }
 		Register<nType, default_val> &operator-=(DWORD val) { this->val -= val; return *this; }
+		Register<nType, default_val> &operator*=(DWORD val) { this->val *= val; return *this; }
+		Register<nType, default_val> &operator/=(DWORD val) { this->val /= val; return *this; }
+		Register<nType, default_val> &operator&=(DWORD val) { this->val &= val; return *this; }
+		Register<nType, default_val> &operator|=(DWORD val) { this->val |= val; return *this; }
+		Register<nType, default_val> &operator^=(DWORD val) { this->val ^= val; return *this; }
+		Register<nType, default_val> &operator+=(Register<nType, default_val> & val) { this->val += val.val; return *this; }
+		Register<nType, default_val> &operator-=(Register<nType, default_val> & val) { this->val -= val.val; return *this; }
+		Register<nType, default_val> &operator*=(Register<nType, default_val> & val) { this->val *= val.val; return *this; }
+		Register<nType, default_val> &operator/=(Register<nType, default_val> & val) { this->val /= val.val; return *this; }
+		Register<nType, default_val> &operator&=(Register<nType, default_val> & val) { this->val &= val.val; return *this; }
+		Register<nType, default_val> &operator|=(Register<nType, default_val> & val) { this->val |= val.val; return *this; }
+		Register<nType, default_val> &operator^=(Register<nType, default_val> & val) { this->val ^= val.val; return *this; }
+
+		Register<nType, default_val> &operator=(DWORD val) { this->val = val; return *this; }
 		Register<nType, default_val> &operator=(Register<nType, default_val> &r) { this->val = r.val; return *this; }
 		DWORD *operator*() { return (DWORD *)this->val; }
 	};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "Memory.h"
 #include "Register.h"
 
 namespace KNVM {
@@ -33,6 +34,9 @@ namespace KNVM {
 		void del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void mod_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+
+	private:
+		inline void setZF(RegisterList<> &reg);
 
 	public:
 		void handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);

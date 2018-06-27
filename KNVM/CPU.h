@@ -15,7 +15,13 @@ namespace KNVM {
 	class CPU {
 	private:
 		uint16_t flags = 0;
-		RegisterList<> reg = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip" };
+
+		/*
+		flags
+		7 6 5 4 3 2 1 0		7		6		   5		  4		  3		 2 1 0
+		D N O C Z - - -		[Debug] [Negative] [Overflow] [Carry] [Zero] [reserved 0-2]
+		*/
+		RegisterList<> reg = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", "flags" };
 		Handler handler;
 
 	public:

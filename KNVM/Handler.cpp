@@ -3,7 +3,7 @@
 #include "Optable.h"
 
 namespace KNVM {
-	void Handler::mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
@@ -11,7 +11,7 @@ namespace KNVM {
 		auto rval = &op[1];
 
 		if (optype == OP_TYPE_IMM) {
-			lreg.set(*(DWORD *)rval);
+			lreg = *(DWORD *)rval;
 		}
 		else if (optype == OP_TYPE_REG) {
 			lreg = reg[*rval];
@@ -20,7 +20,7 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 	}
-	void Handler::push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
@@ -40,7 +40,7 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 	}
-	void Handler::pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
@@ -54,7 +54,7 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 	}
-	void Handler::ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
@@ -69,68 +69,191 @@ namespace KNVM {
 		}
 	}
 
-	void Handler::add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg += *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg += reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+	void _Private Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg -= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg -= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+	void _Private Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg *= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg *= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+	void _Private Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg /= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg /= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+
+	void _Private Handler::and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg &= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg &= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+	void _Private Handler::or (DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg |= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg |= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+	void _Private Handler::xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+
+		if (optype == OP_TYPE_IMM) {
+			lreg ^= *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			lreg ^= reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (lreg == 0)
+			setZF(reg);
+	}
+
+	void _Private Handler::jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-
-	void Handler::and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::or (DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-
-	void Handler::jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void Handler::jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
 
-	void Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::mod_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::mod_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
-	void Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	void _Private Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
 
-	void Handler::handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	inline void _Private Handler::setZF(RegisterList<> &reg) {
+		reg["flags"] = reg["flags"].get() | 0b00000100;
+	}
+
+	void _Public Handler::handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		if (dpinfo == nullptr)
 			return;
 		

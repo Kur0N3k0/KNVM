@@ -3,6 +3,9 @@
 #include <Windows.h>
 
 namespace KNVM {
+#define _Private
+#define _Public
+
 	typedef struct DispatchInfo {
 		BYTE opcode;
 		BYTE opcode_type;

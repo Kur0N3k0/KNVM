@@ -7,26 +7,16 @@
 #include <Windows.h>
 
 namespace KNVM {
+	/*
+	Opcode Type Table
+	*/
 	const BYTE OP_TYPE_IMM = 0;
 	const BYTE OP_TYPE_REG = 1;
 	const BYTE OP_TYPE_PTR = 2;
 	const BYTE OP_TYPE_EXCEPT = 3;
 
-
 	/*
-		void push();
-		void pop();
-		void mov();
-		void ret();
-
-		void add();
-		void sub();
-		void mul();
-		void div();
-
-		void and();
-		void or();
-		void xor();
+	Opcode Table
 	*/
 	const BYTE OP_PUSH = 0x00;
 	const BYTE OP_POP = 0x01;
