@@ -23,6 +23,14 @@ namespace KNVM {
 		bool operator!=(DWORD val) { return this->val != val; }
 		bool operator==(Register<nType, default_val> &reg) { return this->val == reg.val; }
 		bool operator!=(Register<nType, default_val> &reg) { return this->val != reg.val; }
+		bool operator>=(DWORD val) { return this->val >= val; }
+		bool operator<=(DWORD val) { return this->val <= val; }
+		bool operator>=(Register<nType, default_val> & val) { return this->val >= val.val; }
+		bool operator<=(Register<nType, default_val> & val) { return this->val <= val.val; }
+		bool operator>(DWORD val) { return this->val > val; }
+		bool operator<(DWORD val) { return this->val > val; }
+		bool operator>(Register<nType, default_val> & val) { return this->val > val.val; }
+		bool operator<(Register<nType, default_val> & val) { return this->val < val.val; }
 
 		DWORD operator++() { return this->val++; }
 		DWORD operator++(int) { return ++this->val; }
@@ -51,6 +59,7 @@ namespace KNVM {
 		Register<nType, default_val> &operator&=(DWORD val) { this->val &= val; return *this; }
 		Register<nType, default_val> &operator|=(DWORD val) { this->val |= val; return *this; }
 		Register<nType, default_val> &operator^=(DWORD val) { this->val ^= val; return *this; }
+		
 		Register<nType, default_val> &operator+=(Register<nType, default_val> & val) { this->val += val.val; return *this; }
 		Register<nType, default_val> &operator-=(Register<nType, default_val> & val) { this->val -= val.val; return *this; }
 		Register<nType, default_val> &operator*=(Register<nType, default_val> & val) { this->val *= val.val; return *this; }
@@ -79,9 +88,12 @@ namespace KNVM {
 		}
 		Register<nType, default_val> &operator[](BYTE regop) {
 			DWORD idx = 0;
-			while (!(regop & 0b00000001)) {
-				regop >>= 1;
-				idx++;
+			if (regop != 0) {
+				idx = 1;
+				while (!(regop & 0b00000001)) {
+					regop >>= 1;
+					idx++;
+				}
 			}
 			return reg[idx];
 		}

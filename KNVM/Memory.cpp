@@ -20,18 +20,26 @@ namespace KNVM {
 	void *Memory::operator-(DWORD range) { return (void *)((DWORD)address - range); }
 	void *Memory::operator++() {
 		address = (void *)((DWORD)address + align);
+		if ((DWORD)address > (DWORD)baseaddr + size)
+			throw "Memory Exceeded";
 		return address;
 	}
 	void *Memory::operator--() {
 		address = (void *)((DWORD)address - align);
+		if ((DWORD)address < (DWORD)baseaddr)
+			throw "Memory Top Reached";
 		return address;
 	}
 	void *Memory::operator+=(DWORD p) {
 		address = (void *)((DWORD)address + align * p);
+		if ((DWORD)address > (DWORD)baseaddr + size)
+			throw "Memory Exceeded";
 		return address;
 	}
 	void *Memory::operator-=(DWORD p) {
 		address = (void *)((DWORD)address - align * p);
+		if ((DWORD)address < (DWORD)baseaddr)
+			throw "Memory Top Reached";
 		return address;
 	}
 }

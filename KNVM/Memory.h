@@ -6,6 +6,7 @@ namespace KNVM {
 	class Memory {
 	private:
 		void *address = nullptr;
+		void *baseaddr = nullptr;
 		DWORD size;
 		DWORD protect;
 		DWORD align;
@@ -13,8 +14,10 @@ namespace KNVM {
 	public:
 		Memory(DWORD size, DWORD protect, DWORD align) : size(size), protect(protect), align(align) {
 			address = VirtualAlloc(NULL, size, MEM_COMMIT, protect);
+			baseaddr = address;
 		}
 		~Memory() {
+			baseaddr = nullptr;
 			VirtualFree(address, size, MEM_DECOMMIT);
 		}
 		void *get() const;

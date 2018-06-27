@@ -13,9 +13,10 @@ namespace KNVM {
 		};
 
 		BYTE *addr = (BYTE *)code.get();
-		setOptype(addr, OP_TYPE_IMM);
-		setOp(addr, OP_PUSH);
-		*((DWORD *)(addr + 1)) = 0x9505;
+		setOptype(addr, OP_TYPE_REG);
+		setOp(addr, OP_POP);
+		
+		*((BYTE *)(addr + 1)) = 0x01;
 	}
 
 	void CPU::execute(Memory &code, Memory &stack) {
@@ -70,7 +71,7 @@ namespace KNVM {
 		DispatchInfo *dpinfo = new DispatchInfo;
 		dpinfo->opcode = opcode;
 		dpinfo->opcode_type = optype;
-		dpinfo->opcode_size = opsize;
+		dpinfo->opcode_size = opsize + 1;
 		dpinfo->opcodes = new BYTE[opsize];
 		std::memcpy(dpinfo->opcodes, &addr[1], opsize);
 

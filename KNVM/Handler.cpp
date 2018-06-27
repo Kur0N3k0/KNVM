@@ -25,16 +25,24 @@ namespace KNVM {
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
 		auto lval = &op[0];
+		DWORD sbase = (DWORD)stack.get();
 
 		if (optype == OP_TYPE_IMM) {
+			if (reg["esp"] <= sbase)
+				throw "Stack Memory Top Reached";
+
 			reg["esp"] -= stack.getAlign();
 			DWORD *ptr = *reg["esp"];
 			*ptr = *(DWORD *)lval;
 		}
 		else if (optype == OP_TYPE_REG) {
+			if (reg["esp"] <= sbase)
+				throw "Stack Memory Top Reached";
+
 			reg["esp"] -= stack.getAlign();
+			DWORD val = reg[*lval].get();
 			DWORD *ptr = *reg["esp"];
-			*ptr = *(DWORD *)lval;
+			*ptr = val;
 		}
 		else {
 			throw "Unknown Operand Type";
@@ -45,10 +53,17 @@ namespace KNVM {
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
 		auto lval = &op[0];
+		DWORD sbase = (DWORD)stack.get();
 
 		if (optype == OP_TYPE_REG) {
-			reg[*lval] = reg["esp"];
+			if (reg["esp"] >= sbase + stack.getSize())
+				throw "Stack Memory Exceeded";
+
+			DWORD *ptr = *reg["esp"];
+			DWORD val = *ptr;
 			reg["esp"] += stack.getAlign();
+
+			reg[*lval] = val;
 		}
 		else {
 			throw "Unknown Operand Type";
@@ -59,9 +74,14 @@ namespace KNVM {
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
 		auto lval = &op[0];
+		DWORD sbase = (DWORD)stack.get();
 
 		if (optype == OP_TYPE_REG) {
-			reg["eip"] = reg["esp"];
+			if (reg["esp"] >= sbase + stack.getSize())
+				throw "Stack Memory Exceeded";
+
+			DWORD *ptr = *reg["esp"];
+			reg["eip"] = *ptr;
 			reg["esp"] += stack.getAlign();
 		}
 		else {
