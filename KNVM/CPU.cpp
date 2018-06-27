@@ -4,7 +4,7 @@
 #include <string>
 
 namespace KNVM {
-	void CPU::genTestcase(Memory &code) {
+	void _Private CPU::genTestcase(Memory &code) {
 		auto setOptype = [=](BYTE *op, BYTE type) {
 			op[0] = op[0] | (type << 6);
 		};
@@ -19,7 +19,7 @@ namespace KNVM {
 		*((BYTE *)(addr + 1)) = 0x01;
 	}
 
-	void CPU::execute(Memory &code, Memory &stack) {
+	void _Public CPU::execute(Memory &code, Memory &stack) {
 		reg["eip"] = (DWORD)code.get();
 		reg["esp"] = (DWORD)stack.get() + stack.getSize();
 		reg["ebp"] = reg["esp"];
@@ -46,7 +46,7 @@ namespace KNVM {
 		}
 	}
 
-	DispatchInfo *CPU::dispatch(Register<> &pc, Memory &code) {
+	DispatchInfo * _Public CPU::dispatch(Register<> &pc, Memory &code) {
 		BYTE *addr = (BYTE *)code.get();
 		BYTE opcode = (addr[0] & 0b00111111);
 		BYTE optype = (addr[0] & 0b11000000) >> 6;

@@ -36,7 +36,21 @@ namespace KNVM {
 		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
+		/*
+		flags
+		7 6 5 4 3 2 1 0		7		6		   5		  4		  3		 2 1 0
+		D N O C Z - - -		[Debug] [Negative] [Overflow] [Carry] [Zero] [reserved 0-2]
+		*/
 		inline void setZF(RegisterList<> &reg);
+		inline bool getZF(RegisterList<> &reg);
+		inline void setCF(RegisterList<> &reg);
+		inline bool getCF(RegisterList<> &reg);
+		inline void setOF(RegisterList<> &reg);
+		inline bool getOF(RegisterList<> &reg);
+		inline void setNF(RegisterList<> &reg);
+		inline bool getNF(RegisterList<> &reg);
+		inline void setDF(RegisterList<> &reg);
+		inline bool getDF(RegisterList<> &reg);
 
 	public:
 		void handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);

@@ -1,11 +1,12 @@
 #include "Memory.h"
+#include "types.h"
 
 namespace KNVM {
-	void *Memory::get() const { return address; }
-	DWORD Memory::getAlign() const { return align; }
-	DWORD Memory::getSize() const { return size; }
+	void * _Public Memory::get() const { return address; }
+	DWORD _Public Memory::getAlign() const { return align; }
+	DWORD _Public Memory::getSize() const { return size; }
 
-	Memory &Memory::operator=(Memory &mem) {
+	Memory & _Public Memory::operator=(Memory &mem) {
 		if (address != nullptr)
 			VirtualFree(address, size, MEM_DECOMMIT);
 
@@ -16,27 +17,27 @@ namespace KNVM {
 		return *this;
 	}
 
-	void *Memory::operator+(DWORD range) { return (void *)((DWORD)address + range); }
-	void *Memory::operator-(DWORD range) { return (void *)((DWORD)address - range); }
-	void *Memory::operator++() {
+	void * _Public Memory::operator+(DWORD range) { return (void *)((DWORD)address + range); }
+	void * _Public Memory::operator-(DWORD range) { return (void *)((DWORD)address - range); }
+	void * _Public Memory::operator++() {
 		address = (void *)((DWORD)address + align);
 		if ((DWORD)address > (DWORD)baseaddr + size)
 			throw "Memory Exceeded";
 		return address;
 	}
-	void *Memory::operator--() {
+	void * _Public Memory::operator--() {
 		address = (void *)((DWORD)address - align);
 		if ((DWORD)address < (DWORD)baseaddr)
 			throw "Memory Top Reached";
 		return address;
 	}
-	void *Memory::operator+=(DWORD p) {
+	void * _Public Memory::operator+=(DWORD p) {
 		address = (void *)((DWORD)address + align * p);
 		if ((DWORD)address > (DWORD)baseaddr + size)
 			throw "Memory Exceeded";
 		return address;
 	}
-	void *Memory::operator-=(DWORD p) {
+	void * _Public Memory::operator-=(DWORD p) {
 		address = (void *)((DWORD)address - align * p);
 		if ((DWORD)address < (DWORD)baseaddr)
 			throw "Memory Top Reached";
