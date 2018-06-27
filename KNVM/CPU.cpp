@@ -4,7 +4,7 @@
 #include <string>
 
 namespace KNVM {
-	void CPU::execute(Memory &code) {
+	void CPU::execute(Memory &code, Memory &stack) {
 		while (true) {
 			try {
 				DispatchInfo *dpinfo = dispatch(reg["eip"], code);
@@ -14,7 +14,7 @@ namespace KNVM {
 				
 				reg["eip"] += dpinfo->opcode_size;
 				
-				handler.handle(dpinfo);
+				handler.handle(dpinfo, reg, stack);
 
 				delete dpinfo;
 			}

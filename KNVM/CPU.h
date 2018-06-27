@@ -19,7 +19,7 @@ namespace KNVM {
 		Handler handler;
 
 	public:
-		void execute(Memory &code);
+		void execute(Memory &code, Memory &stack);
 		DispatchInfo *dispatch(Register<> &pc, Memory &code);
 		auto &getRegister() { return reg; }
 	};

@@ -27,8 +27,10 @@ namespace KNVM {
 		DWORD operator++(int) { return ++this->val; }
 		DWORD operator--() { return this->val--; }
 		DWORD operator--(int) { return --this->val; }
-		Register<> &operator+=(DWORD val) { this->val += val; return *this; }
-		Register<> &operator-=(DWORD val) { this->val -= val; return *this; }
+		Register<nType, default_val> &operator+=(DWORD val) { this->val += val; return *this; }
+		Register<nType, default_val> &operator-=(DWORD val) { this->val -= val; return *this; }
+		Register<nType, default_val> &operator=(Register<nType, default_val> &r) { this->val = r.val; return *this; }
+		DWORD *operator*() { return (DWORD *)this->val; }
 	};
 
 	template<typename nType = std::string, uint32_t default_val = 0>
@@ -43,6 +45,14 @@ namespace KNVM {
 			if (result == reg.end())
 				throw "Register::Unknown";
 			return *result;
+		}
+		Register<nType, default_val> &operator[](BYTE regop) {
+			DWORD idx = 0;
+			while (!(regop & 0b00000001)) {
+				regop >>= 1;
+				idx++;
+			}
+			return reg[idx];
 		}
 	};
 }

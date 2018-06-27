@@ -49,7 +49,7 @@ namespace KNVM {
 	const BYTE OP_JB = 0x0f;
 	const BYTE OP_JL = 0x10;
 	const BYTE OP_JLE = 0x11;
-	const BYTE OP_JZ = 0x012;
+	const BYTE OP_JZ = 0x12;
 
 	const BYTE OP_ADD_EXCEPT = 0xde;
 	const BYTE OP_DEL_EXCEPT = 0xad;

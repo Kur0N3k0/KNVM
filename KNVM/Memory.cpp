@@ -2,6 +2,7 @@
 
 namespace KNVM {
 	void *Memory::get() const { return address; }
+	DWORD Memory::getAlign() const { return align; }
 
 	Memory &Memory::operator=(Memory &mem) {
 		if (address != nullptr)

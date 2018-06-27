@@ -18,6 +18,7 @@ namespace KNVM {
 			VirtualFree(address, size, MEM_DECOMMIT);
 		}
 		void *get() const;
+		DWORD getAlign() const;
 		Memory &operator=(Memory &mem);
 		void *operator+(DWORD range);
 		void *operator-(DWORD range);
