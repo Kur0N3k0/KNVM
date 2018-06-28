@@ -95,6 +95,7 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
+		Register<> prev_lreg = lreg;
 
 		if (optype == OP_TYPE_IMM) {
 			lreg += *(DWORD *)rval;
@@ -108,6 +109,10 @@ namespace KNVM {
 
 		if (lreg == 0)
 			setZF(reg);
+		if (lreg < prev_lreg) {
+			setCF(reg);
+			setOF(reg);
+		}
 	}
 	void _Private Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
@@ -115,6 +120,7 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
+		Register<> prev_lreg = lreg;
 
 		if (optype == OP_TYPE_IMM) {
 			lreg -= *(DWORD *)rval;
@@ -128,6 +134,10 @@ namespace KNVM {
 
 		if (lreg == 0)
 			setZF(reg);
+		if (lreg > prev_lreg) {
+			setCF(reg);
+			setOF(reg);
+		}
 	}
 	void _Private Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
@@ -135,6 +145,7 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
+		Register<> prev_lreg = lreg;
 
 		if (optype == OP_TYPE_IMM) {
 			lreg *= *(DWORD *)rval;
@@ -148,6 +159,10 @@ namespace KNVM {
 
 		if (lreg == 0)
 			setZF(reg);
+		if (lreg < prev_lreg) {
+			setCF(reg);
+			setOF(reg);
+		}
 	}
 	void _Private Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
@@ -157,10 +172,15 @@ namespace KNVM {
 		auto rval = &op[1];
 
 		if (optype == OP_TYPE_IMM) {
+			if (*(DWORD *)rval == 0)
+				throw "Divide by zero";
 			lreg /= *(DWORD *)rval;
 		}
 		else if (optype == OP_TYPE_REG) {
-			lreg /= reg[*rval];
+			auto &val = reg[*rval];
+			if (val == 0)
+				throw "Divide by zero";
+			lreg /= val;
 		}
 		else {
 			throw "Unknown Operand Type";
@@ -391,28 +411,85 @@ namespace KNVM {
 	}
 
 	void _Private Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto eip = reg["eip"].get();
 
+		if (optype == OP_TYPE_IMM) {
+			DWORD *ptr = (DWORD *)&op[0];
+			fnExp.add_except(ptr);
+		}
+		else if (optype == OP_TYPE_REG) {
+			auto &lreg = reg[op[0]];
+			fnExp.add_except((void *)lreg.get());
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
 	}
 	void _Private Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto eip = reg["eip"].get();
 
-	}
-	void _Private Handler::mod_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
+		if (optype == OP_TYPE_IMM) {
+			DWORD *ptr = (DWORD *)&op[0];
+			fnExp.del_except(ptr);
+		}
+		else if (optype == OP_TYPE_REG) {
+			auto &lreg = reg[op[0]];
+			fnExp.del_except((void *)lreg.get());
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
 	}
 	void _Private Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto eip = reg["eip"].get();
 
+		if (optype == OP_TYPE_IMM) {
+			DWORD *ptr = (DWORD *)&op[0];
+			if (!fnExp.is_func(ptr))
+				throw "Not Defined Function";
+			
+			DWORD retaddr = reg["eip"]  + opsize;
+			reg["eip"] = (DWORD)ptr;
+			reg["esp"] -= stack.getAlign();
+			ptr = *reg["esp"];
+			*ptr = retaddr;
+		}
+		else if (optype == OP_TYPE_REG) {
+			auto &lreg = reg[op[0]];
+			DWORD *ptr = *lreg;
+			if (!fnExp.is_func(ptr))
+				throw "Not Defined Function";
+
+			DWORD retaddr = reg["eip"] + opsize;
+			reg["eip"] = (DWORD)ptr;
+			reg["esp"] -= stack.getAlign();
+			ptr = *reg["esp"];
+			*ptr = retaddr;
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
 	}
 
 	inline void _Private Handler::setZF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00001000; }
-	inline bool _Private Handler::getZF(RegisterList<> &reg) { return (reg["flags"].get() & 0b00000100) >> 3; }
+	inline bool _Private Handler::getZF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00000100) >> 3) == 1; }
 	inline void _Private Handler::setCF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00010000; }
-	inline bool _Private Handler::getCF(RegisterList<> &reg) { return (reg["flags"].get() & 0b0000100) >> 4; }
+	inline bool _Private Handler::getCF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 4) == 1; }
 	inline void _Private Handler::setOF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00100000; }
-	inline bool _Private Handler::getOF(RegisterList<> &reg) { return (reg["flags"].get() & 0b0000100) >> 5; }
+	inline bool _Private Handler::getOF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 5) == 1; }
 	inline void _Private Handler::setNF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00100000; }
-	inline bool _Private Handler::getNF(RegisterList<> &reg) { return (reg["flags"].get() & 0b0000100) >> 6; }
+	inline bool _Private Handler::getNF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 6) == 1; }
 	inline void _Private Handler::setDF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b01000000; }
-	inline bool _Private Handler::getDF(RegisterList<> &reg) { return (reg["flags"].get() & 0b0000100) >> 7; }
+	inline bool _Private Handler::getDF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 7) == 1; }
 
 	void _Public Handler::handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		if (dpinfo == nullptr)
@@ -481,9 +558,6 @@ namespace KNVM {
 			break;
 		case OP_DEL_EXCEPT:
 			this->del_except(dpinfo, reg, stack);
-			break;
-		case OP_MOD_EXCEPT:
-			this->mod_except(dpinfo, reg, stack);
 			break;
 		case OP_EXCEPT_CALL:
 			this->call_except(dpinfo, reg, stack);

@@ -15,6 +15,8 @@ namespace KNVM {
 		void test() {
 			Memory code(0x1000, PAGE_READWRITE, 4);
 			Memory stack(0x1000, PAGE_READWRITE, 4);
+			memset(code.get(), 0, 0x1000);
+			memset(stack.get(), 0, 0x1000);
 			this->cpu.execute(code, stack);
 		}
 		auto getReg() {

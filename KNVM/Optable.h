@@ -43,6 +43,6 @@ namespace KNVM {
 
 	const BYTE OP_ADD_EXCEPT = 0xde;
 	const BYTE OP_DEL_EXCEPT = 0xad;
-	const BYTE OP_MOD_EXCEPT = 0xbe;
+	//const BYTE OP_MOD_EXCEPT = 0xbe;
 	const BYTE OP_EXCEPT_CALL = 0xef;
 }

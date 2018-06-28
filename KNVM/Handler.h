@@ -3,6 +3,7 @@
 #include "types.h"
 #include "Memory.h"
 #include "Register.h"
+#include "FuncException.h"
 
 namespace KNVM {
 	class Handler {
@@ -30,9 +31,11 @@ namespace KNVM {
 		void jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
+	private:
+		FuncException fnExp;
+
 		void add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void mod_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:

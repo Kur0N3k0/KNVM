@@ -122,6 +122,7 @@
     <ClInclude Include="CPU.h" />
     <ClInclude Include="Disassembler.h" />
     <ClInclude Include="Emulator.h" />
+    <ClInclude Include="FuncException.h" />
     <ClInclude Include="Handler.h" />
     <ClInclude Include="KNVM.h" />
     <ClInclude Include="Memory.h" />
