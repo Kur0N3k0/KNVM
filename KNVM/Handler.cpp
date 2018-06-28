@@ -1,5 +1,5 @@
-#include "types.h"
 #include "Handler.h"
+#include "types.h"
 #include "Optable.h"
 
 namespace KNVM {

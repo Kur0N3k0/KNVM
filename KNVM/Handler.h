@@ -4,6 +4,7 @@
 #include "Memory.h"
 #include "Register.h"
 #include "FuncException.h"
+//#include "KNVM.h"
 
 namespace KNVM {
 	class Handler {

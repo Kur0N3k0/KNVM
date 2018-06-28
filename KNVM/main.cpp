@@ -1,7 +1,5 @@
 #include <iostream>
 #include "KNVM.h"
-#include "Memory.h"
-#include "Disassembler.h"
 
 using namespace std;
 

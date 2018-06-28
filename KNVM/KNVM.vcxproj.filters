@@ -21,9 +21,6 @@
     <ClInclude Include="KNVM.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Opcodes.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Emulator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -46,6 +43,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="FuncException.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Asm.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

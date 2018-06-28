@@ -1,5 +1,6 @@
 #include "Memory.h"
 #include "types.h"
+#include "Optable.h"
 
 namespace KNVM {
 	void * _Public Memory::get() const { return address; }
@@ -42,5 +43,10 @@ namespace KNVM {
 		if ((DWORD)address < (DWORD)baseaddr)
 			throw "Memory Top Reached";
 		return address;
+	}
+
+	Memory &_Public Memory::operator+=(Asm &asmbly) {
+
+		return *this;
 	}
 }

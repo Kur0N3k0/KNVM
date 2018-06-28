@@ -1,7 +1,7 @@
 #include "Disassembler.h"
-#include "Register.h"
-#include "Optable.h"
-#include "types.h"
+//#include "Register.h"
+//#include "Optable.h"
+//#include "types.h"
 
 #include <string>
 #include <iostream>

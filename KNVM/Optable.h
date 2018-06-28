@@ -2,10 +2,6 @@
 
 #include <Windows.h>
 
-#include "CPU.h"
-
-#include <Windows.h>
-
 namespace KNVM {
 	/*
 	Opcode Type Table

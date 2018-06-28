@@ -126,7 +126,7 @@
     <ClInclude Include="Handler.h" />
     <ClInclude Include="KNVM.h" />
     <ClInclude Include="Memory.h" />
-    <ClInclude Include="Opcodes.h" />
+    <ClInclude Include="Asm.h" />
     <ClInclude Include="Optable.h" />
     <ClInclude Include="Register.h" />
     <ClInclude Include="types.h" />

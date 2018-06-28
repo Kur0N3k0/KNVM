@@ -1,10 +1,13 @@
 #pragma once
 
+
 #include "Register.h"
 #include "Memory.h"
 #include "Optable.h"
 #include "types.h"
 #include "Handler.h"
+
+//#include "KNVM.h"
 
 #include <vector>
 #include <algorithm>

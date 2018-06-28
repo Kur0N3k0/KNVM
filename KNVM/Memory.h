@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Asm.h"
 #include <Windows.h>
 
 namespace KNVM {
@@ -30,5 +31,6 @@ namespace KNVM {
 		void *operator--();
 		void *operator+=(DWORD p);
 		void *operator-=(DWORD p);
+		Memory &operator+=(Asm &asmbly);
 	};
 }
