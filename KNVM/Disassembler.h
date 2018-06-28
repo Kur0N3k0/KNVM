@@ -33,6 +33,8 @@ namespace KNVM {
 		std::string jle(DispatchInfo *dpinfo);
 		std::string jz(DispatchInfo *dpinfo);
 
+		std::string exit(DispatchInfo *dpinfo);
+
 	private:
 		FuncException fnExp;
 

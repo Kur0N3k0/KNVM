@@ -4,7 +4,6 @@
 #include "Memory.h"
 #include "Register.h"
 #include "FuncException.h"
-//#include "KNVM.h"
 
 namespace KNVM {
 	class Handler {
@@ -31,6 +30,8 @@ namespace KNVM {
 		void jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+
+		void exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
 		FuncException fnExp;

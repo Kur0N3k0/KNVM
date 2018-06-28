@@ -2,17 +2,25 @@
 #include "KNVM.h"
 
 using namespace std;
+using namespace KNVM;
 
 int main() {
-	//KNVM::KNVM knvm;
+	Memory code(0x1000, PAGE_READWRITE, 4);
+	code += Asm(OP_PUSH, "ebp");
+	code += Asm(OP_MOV, "ebp", "esp");
+	code += Asm(OP_SUB, "esp", 0x100);
+	code += Asm(OP_ADD, "esp", 0x100);
+	code += Asm(OP_MOV, "ebp", "esp");
+	code += Asm(OP_EXIT);
+	code += Asm(OP_RET);
 
-	//knvm.test();
+	Disassembler disassembler(code);
 
-	KNVM::Memory code(100, PAGE_READWRITE, 4);
-	KNVM::Disassembler disassembler(code);
-
-	memset(code.get(), 0, 100);
 	cout << disassembler.disassemble() << endl;
+
+	::KNVM::KNVM knvm;
+
+	knvm.test2(code);
 
 	int i;
 	cin >> i;

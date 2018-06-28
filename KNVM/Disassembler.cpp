@@ -16,10 +16,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "mov ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -84,10 +84,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "add ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -104,10 +104,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "sub ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -124,10 +124,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "mul ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -144,10 +144,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "div ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -165,10 +165,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "and ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -185,10 +185,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "or ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -205,10 +205,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		std::string asmbly = "xor ";
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			asmbly += join(lreg.getName(), reg[*rval].getName());
 		}
 		else {
@@ -376,6 +376,18 @@ namespace KNVM {
 		}
 		return asmbly;
 	}
+	std::string Disassembler::exit(DispatchInfo * dpinfo) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+
+		if (optype == OP_TYPE_REG) {
+			return "exit\n";
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+	}
 	std::string Disassembler::add_except(DispatchInfo * dpinfo) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
@@ -445,13 +457,13 @@ namespace KNVM {
 		while(true){
 			try {
 				DispatchInfo *dpinfo = cpu.dispatch(reg["eip"], code);
-				std::cout << "----------------------------" << std::endl;
-				std::cout << "eip : 0x" << std::hex << reg["eip"].get() << std::endl;
-				std::cout << "opsize : " << dpinfo->opcode_size << std::endl;
-				reg["eip"] += dpinfo->opcode_size;
-				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getSize())
-					throw "Dispatch Fail";
+				if (dpinfo == nullptr)
+					throw "Dispatchinfo is null";
 
+				reg["eip"] += dpinfo->opcode_size;
+				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
+					throw "Dispatch Fail";
+				 
 				switch (dpinfo->opcode) {
 				case OP_PUSH:
 					result += this->push(dpinfo);
@@ -510,6 +522,9 @@ namespace KNVM {
 				case OP_JZ:
 					result += this->jz(dpinfo);
 					break;
+				case OP_EXIT:
+					result += this->exit(dpinfo);
+					break;
 				case OP_ADD_EXCEPT:
 					result += this->add_except(dpinfo);
 					break;
@@ -522,7 +537,6 @@ namespace KNVM {
 				}
 
 				delete dpinfo;
-				dpinfo = cpu.dispatch(reg["eip"], code);
 			}
 			catch (const char *err) {
 				break;

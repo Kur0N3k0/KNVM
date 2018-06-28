@@ -21,7 +21,7 @@ namespace KNVM {
 
 	void _Public CPU::execute(Memory &code, Memory &stack) {
 		reg["eip"] = (DWORD)code.get();
-		reg["esp"] = (DWORD)stack.get() + stack.getSize();
+		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
 		reg["ebp"] = reg["esp"];
 
 		genTestcase(code);
@@ -34,6 +34,8 @@ namespace KNVM {
 					throw "DispatchInfo == nullptr";
 				
 				reg["eip"] += dpinfo->opcode_size;
+				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
+					throw "Dispatch Fail";
 				
 				handler.handle(dpinfo, reg, stack);
 
@@ -50,7 +52,7 @@ namespace KNVM {
 	}
 
 	DispatchInfo * _Public CPU::dispatch(Register<> &pc, Memory &code) {
-		BYTE *addr = (BYTE *)code.get();
+		BYTE *addr = (BYTE *)pc.get();
 		BYTE opcode = (addr[0] & 0b00111111);
 		BYTE optype = (addr[0] & 0b11000000) >> 6;
 		
@@ -62,11 +64,12 @@ namespace KNVM {
 		case OP_TYPE_REG:
 			opsize = 1;
 			break;
-		case OP_TYPE_PTR:
-			opsize = sizeof(void*);
+		case OP_TYPE_REG2:
+			opsize = 2;
 			break;
-		case OP_TYPE_EXCEPT:
-			opsize = 4;
+		case OP_TYPE_IMM2:
+			opsize = 5;
+			break;
 		default:
 			return nullptr;
 		}
@@ -75,8 +78,8 @@ namespace KNVM {
 		dpinfo->opcode = opcode;
 		dpinfo->opcode_type = optype;
 		dpinfo->opcode_size = opsize + 1;
-		dpinfo->opcodes = new BYTE[opsize];
-		std::memcpy(dpinfo->opcodes, &addr[1], opsize);
+		dpinfo->opcodes = new BYTE[opsize + 1];
+		std::memcpy(dpinfo->opcodes, &addr[1], opsize + 1);
 
 		return dpinfo;
 	}

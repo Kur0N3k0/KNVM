@@ -10,10 +10,10 @@ namespace KNVM {
 		auto lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg = *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg = reg[*rval];
 		}
 		else {
@@ -97,10 +97,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		Register<> prev_lreg = lreg;
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg += *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg += reg[*rval];
 		}
 		else {
@@ -122,10 +122,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		Register<> prev_lreg = lreg;
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg -= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg -= reg[*rval];
 		}
 		else {
@@ -147,10 +147,10 @@ namespace KNVM {
 		auto rval = &op[1];
 		Register<> prev_lreg = lreg;
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg *= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg *= reg[*rval];
 		}
 		else {
@@ -171,12 +171,12 @@ namespace KNVM {
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			if (*(DWORD *)rval == 0)
 				throw "Divide by zero";
 			lreg /= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			auto &val = reg[*rval];
 			if (val == 0)
 				throw "Divide by zero";
@@ -197,10 +197,10 @@ namespace KNVM {
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg &= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg &= reg[*rval];
 		}
 		else {
@@ -217,10 +217,10 @@ namespace KNVM {
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg |= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg |= reg[*rval];
 		}
 		else {
@@ -237,10 +237,10 @@ namespace KNVM {
 		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM) {
+		if (optype == OP_TYPE_IMM2) {
 			lreg ^= *(DWORD *)rval;
 		}
-		else if (optype == OP_TYPE_REG) {
+		else if (optype == OP_TYPE_REG2) {
 			lreg ^= reg[*rval];
 		}
 		else {
@@ -409,6 +409,20 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 	}
+	void _Private Handler::exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto lval = &op[0];
+		DWORD sbase = (DWORD)stack.get();
+
+		if (optype == OP_TYPE_REG) {
+			throw "Program Exit";
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+	}
 
 	void _Private Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto opsize = dpinfo->opcode_size;
@@ -550,6 +564,9 @@ namespace KNVM {
 			break;
 		case OP_JZ:
 			this->jz(dpinfo, reg, stack);
+			break;
+		case OP_EXIT:
+			this->exit(dpinfo, reg, stack);
 			break;
 		case OP_ADD_EXCEPT:
 			this->add_except(dpinfo, reg, stack);

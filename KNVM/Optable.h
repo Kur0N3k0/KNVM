@@ -8,8 +8,8 @@ namespace KNVM {
 	*/
 	const BYTE OP_TYPE_IMM = 0;
 	const BYTE OP_TYPE_REG = 1;
-	const BYTE OP_TYPE_PTR = 2;
-	const BYTE OP_TYPE_EXCEPT = 3;
+	const BYTE OP_TYPE_REG2 = 2;
+	const BYTE OP_TYPE_IMM2 = 3;
 
 	/*
 	Opcode Table
@@ -36,6 +36,8 @@ namespace KNVM {
 	const BYTE OP_JL = 0x10;
 	const BYTE OP_JLE = 0x11;
 	const BYTE OP_JZ = 0x12;
+
+	const BYTE OP_EXIT = 0x3f; // 0b00111111
 
 	const BYTE OP_ADD_EXCEPT = 0xde;
 	const BYTE OP_DEL_EXCEPT = 0xad;

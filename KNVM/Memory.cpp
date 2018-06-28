@@ -2,10 +2,13 @@
 #include "types.h"
 #include "Optable.h"
 
+#include <iterator>
+
 namespace KNVM {
-	void * _Public Memory::get() const { return address; }
+	void * _Public Memory::get() { return address; }
 	DWORD _Public Memory::getAlign() const { return align; }
 	DWORD _Public Memory::getSize() const { return size; }
+	DWORD _Public Memory::getCodeSize() const { return codesize; }
 
 	Memory & _Public Memory::operator=(Memory &mem) {
 		if (address != nullptr)
@@ -45,8 +48,12 @@ namespace KNVM {
 		return address;
 	}
 
-	Memory &_Public Memory::operator+=(Asm &asmbly) {
+	Memory &_Public Memory::operator+=(Asm asmbly) {
+		BYTE *code = (BYTE *)address + codesize;
+		std::memcpy(code, asmbly.code, asmbly.codesize);
 
+		codesize += asmbly.codesize;
+		
 		return *this;
 	}
 }

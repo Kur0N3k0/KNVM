@@ -21,11 +21,12 @@ namespace KNVM {
 			Memory code(0x1000, PAGE_READWRITE, 4);
 			Memory stack(0x1000, PAGE_READWRITE, 4);
 			memset(code.get(), 0, 0x1000);
-			memset(code.get(), 0, 0x1000);
+			memset(stack.get(), 0, 0x1000);
 			this->cpu.execute(code, stack);
 		}
-		auto getReg() {
-			return this->cpu.getRegister();
+		void test2(Memory &code){
+			Memory stack(0x1000, PAGE_READWRITE, 4);
+			this->cpu.execute(code, stack);
 		}
 	};
 }
