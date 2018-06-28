@@ -65,5 +65,8 @@
     <ClCompile Include="Handler.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Disassembler.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

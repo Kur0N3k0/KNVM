@@ -414,7 +414,6 @@ namespace KNVM {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
 
 		if (optype == OP_TYPE_IMM) {
 			DWORD *ptr = (DWORD *)&op[0];
@@ -432,7 +431,6 @@ namespace KNVM {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
 
 		if (optype == OP_TYPE_IMM) {
 			DWORD *ptr = (DWORD *)&op[0];
@@ -457,7 +455,7 @@ namespace KNVM {
 			if (!fnExp.is_func(ptr))
 				throw "Not Defined Function";
 			
-			DWORD retaddr = reg["eip"]  + opsize;
+			DWORD retaddr = eip  + opsize;
 			reg["eip"] = (DWORD)ptr;
 			reg["esp"] -= stack.getAlign();
 			ptr = *reg["esp"];
@@ -469,7 +467,7 @@ namespace KNVM {
 			if (!fnExp.is_func(ptr))
 				throw "Not Defined Function";
 
-			DWORD retaddr = reg["eip"] + opsize;
+			DWORD retaddr = eip + opsize;
 			reg["eip"] = (DWORD)ptr;
 			reg["esp"] -= stack.getAlign();
 			ptr = *reg["esp"];

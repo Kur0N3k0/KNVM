@@ -1,20 +1,20 @@
 #include <iostream>
 #include "KNVM.h"
+#include "Memory.h"
+#include "Disassembler.h"
 
 using namespace std;
 
 int main() {
-	KNVM::KNVM knvm;
+	//KNVM::KNVM knvm;
 
-	auto reg = knvm.getReg();
-	cout << reg["eax"].get() << endl;
-	reg["eax"].set(0x100);
-	cout << reg["eax"].get() << endl;
+	//knvm.test();
 
-	auto r2 = knvm.getReg();
-	cout << reg["eax"].get() << endl;
+	KNVM::Memory code(100, PAGE_READWRITE, 4);
+	KNVM::Disassembler disassembler(code);
 
-	knvm.test();
+	memset(code.get(), 0, 100);
+	cout << disassembler.disassemble() << endl;
 
 	int i;
 	cin >> i;

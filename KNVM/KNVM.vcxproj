@@ -133,6 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Handler.cpp" />
     <ClCompile Include="KNVM.cpp" />
     <ClCompile Include="main.cpp" />

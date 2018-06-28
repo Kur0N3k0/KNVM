@@ -43,6 +43,9 @@ namespace KNVM {
 				std::cout << __FUNCTION__ << " -> " << err << std::endl;
 				break;
 			}
+			catch (std::exception exp) {
+				std::cout << __FUNCTION__ << " -> " << exp.what() << std::endl;
+			}
 		}
 	}
 

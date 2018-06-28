@@ -17,6 +17,7 @@ namespace KNVM {
 		Register(nType name, DWORD val=default_val) : name(name), val(val) { }
 		DWORD get() const { return val; }
 		void set(DWORD val) { this->val = val; }
+		nType getName() const { return name; }
 		bool operator==(nType name) { return this->name == name; }
 		bool operator!=(nType name) { return this->name != name; }
 		bool operator==(DWORD val) { return this->val == val; }
