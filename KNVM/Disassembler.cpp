@@ -69,6 +69,8 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 
 		if (optype == OP_TYPE_REG) {
+			auto &eip = cpu.getRegister()["eip"];
+			eip -= 1;
 			return "ret\n";
 		}
 		else {
@@ -376,12 +378,58 @@ namespace KNVM {
 		}
 		return asmbly;
 	}
+
+	std::string Disassembler::cmp(DispatchInfo *dpinfo) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto rval = &op[1];
+		auto &reg = cpu.getRegister();
+		std::string asmbly = "cmp ";
+
+		if (optype == OP_TYPE_IMM2) {
+			DWORD val = *(DWORD *)rval;
+			asmbly += join(hex(val));
+		}
+		else if (optype == OP_TYPE_REG2) {
+			auto &lreg = reg[op[0]];
+			asmbly += join(lreg.getName(), reg[*rval].getName());
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+		return asmbly;
+	}
+	std::string Disassembler::test(DispatchInfo *dpinfo) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto rval = &op[1];
+		auto &reg = cpu.getRegister();
+		std::string asmbly = "test ";
+
+		if (optype == OP_TYPE_IMM2) {
+			DWORD val = *(DWORD *)rval;
+			asmbly += join(hex(val));
+		}
+		else if (optype == OP_TYPE_REG2) {
+			auto &lreg = reg[op[0]];
+			asmbly += join(lreg.getName(), reg[*rval].getName());
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+		return asmbly;
+	}
+
 	std::string Disassembler::exit(DispatchInfo * dpinfo) {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
 
 		if (optype == OP_TYPE_REG) {
+			auto &eip = cpu.getRegister()["eip"];
+			eip -= 1;
 			return "exit\n";
 		}
 		else {
@@ -502,7 +550,7 @@ namespace KNVM {
 					result += this->jmp(dpinfo);
 					break;
 				case OP_JE:
-					result += this->jmp(dpinfo);
+					result += this->je(dpinfo);
 					break;
 				case OP_JNE:
 					result += this->jne(dpinfo);
@@ -521,6 +569,12 @@ namespace KNVM {
 					break;
 				case OP_JZ:
 					result += this->jz(dpinfo);
+					break;
+				case OP_CMP:
+					result += this->cmp(dpinfo);
+					break;
+				case OP_TEST:
+					result += this->test(dpinfo);
 					break;
 				case OP_EXIT:
 					result += this->exit(dpinfo);

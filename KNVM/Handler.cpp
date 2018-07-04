@@ -80,6 +80,8 @@ namespace KNVM {
 			if (reg["esp"] >= sbase + stack.getSize())
 				throw "Stack Memory Exceeded";
 
+			reg["eip"] -= 1;
+
 			DWORD *ptr = *reg["esp"];
 			reg["eip"] = *ptr;
 			reg["esp"] += stack.getAlign();
@@ -492,6 +494,59 @@ namespace KNVM {
 		}
 	}
 
+	void _Private Handler::cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+		Register<> prev_lreg = lreg;
+
+		DWORD result;
+		if (optype == OP_TYPE_IMM2) {
+			result = lreg - *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG2) {
+			result = lreg - reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (result == 0)
+			setZF(reg);
+		if (prev_lreg < result) {
+			setCF(reg);
+			setOF(reg);
+		}
+	}
+	void _Private Handler::test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto opsize = dpinfo->opcode_size;
+		auto optype = dpinfo->opcode_type;
+		auto op = dpinfo->opcodes;
+		auto &lreg = reg[op[0]];
+		auto rval = &op[1];
+		Register<> prev_lreg = lreg;
+
+		DWORD result;
+		if (optype == OP_TYPE_IMM2) {
+			result = lreg & *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG2) {
+			result = lreg & reg[*rval];
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		if (result == 0)
+			setZF(reg);
+		if (prev_lreg < result) {
+			setCF(reg);
+			setOF(reg);
+		}
+	}
+
 	inline void _Private Handler::setZF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00001000; }
 	inline bool _Private Handler::getZF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00000100) >> 3) == 1; }
 	inline void _Private Handler::setCF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00010000; }
@@ -564,6 +619,12 @@ namespace KNVM {
 			break;
 		case OP_JZ:
 			this->jz(dpinfo, reg, stack);
+			break;
+		case OP_CMP:
+			this->cmp(dpinfo, reg, stack);
+			break;
+		case OP_TEST:
+			this->test(dpinfo, reg, stack);
 			break;
 		case OP_EXIT:
 			this->exit(dpinfo, reg, stack);

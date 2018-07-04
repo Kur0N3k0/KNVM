@@ -24,7 +24,7 @@ namespace KNVM {
 		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
 		reg["ebp"] = reg["esp"];
 
-		genTestcase(code);
+		//genTestcase(code);
 
 		while (true) {
 			try {
@@ -53,9 +53,12 @@ namespace KNVM {
 
 	DispatchInfo * _Public CPU::dispatch(Register<> &pc, Memory &code) {
 		BYTE *addr = (BYTE *)pc.get();
+		if (addr > (BYTE *)code.get() + code.getSize()) 
+			throw "Segmentation Fault";
+
 		BYTE opcode = (addr[0] & 0b00111111);
 		BYTE optype = (addr[0] & 0b11000000) >> 6;
-		
+
 		DWORD opsize;
 		switch (optype) {
 		case OP_TYPE_IMM:
@@ -73,7 +76,7 @@ namespace KNVM {
 		default:
 			return nullptr;
 		}
-		
+
 		DispatchInfo *dpinfo = new DispatchInfo;
 		dpinfo->opcode = opcode;
 		dpinfo->opcode_type = optype;

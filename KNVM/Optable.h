@@ -37,6 +37,9 @@ namespace KNVM {
 	const BYTE OP_JLE = 0x11;
 	const BYTE OP_JZ = 0x12;
 
+	const BYTE OP_CMP = 0x13;
+	const BYTE OP_TEST = 0x14;
+
 	const BYTE OP_EXIT = 0x3f; // 0b00111111
 
 	const BYTE OP_ADD_EXCEPT = 0xde;

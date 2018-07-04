@@ -31,6 +31,9 @@ namespace KNVM {
 		void jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
+		void cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+
 		void exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:

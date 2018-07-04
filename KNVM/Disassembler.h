@@ -33,6 +33,9 @@ namespace KNVM {
 		std::string jle(DispatchInfo *dpinfo);
 		std::string jz(DispatchInfo *dpinfo);
 
+		std::string cmp(DispatchInfo *dpinfo);
+		std::string test(DispatchInfo *dpinfo);
+
 		std::string exit(DispatchInfo *dpinfo);
 
 	private:
