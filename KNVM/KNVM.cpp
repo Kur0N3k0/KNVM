@@ -1,6 +1,17 @@
 #include "KNVM.h"
 
 namespace KNVM {
+	bool KNVM::ParseBinary(KNF &knf, Memory &code, Memory &data) {
+		if (knf.bits == KNF::KFN_X64)
+			return false;
+
+		memory->setCodeSize(knf.codesize);
+		memory->setDataSize(knf.datasize);
+		entrypoint = knf.entrypoint;
+
+		void *codebase = memory->getCodePage().get();
+		std::memcpy(codebase, code.get(), code.getCodeSize());
+	}
 	bool KNVM::ParseBinary(const char *path) {
 		std::ifstream file(path, std::ios::in | std::ios::binary);
 		auto fpos = file.tellg();
@@ -20,21 +31,21 @@ namespace KNVM {
 		if (knf.bits == KNF::KFN_X64)
 			return false;
 
-		if (OFFSET_DATA - knf.codesize < OFFSET_DATA)
+		if (OFFSET_DATA - knf.codesize > OFFSET_DATA)
 			return false;
 
-		if (OFFSET_STACK - knf.datasize < OFFSET_STACK)
+		if (OFFSET_STACK - knf.datasize > OFFSET_STACK)
 			return false;
 
-		if (knf.entrypoint < OFFSET_CODE || knf.entrypoint >= OFFSET_DATA)
-			return false;
+		//if (knf.entrypoint < (void *)OFFSET_CODE || knf.entrypoint >= (void *)OFFSET_DATA)
+		//	return false;
 
 		void *baseaddr = memory->get();
 		if (baseaddr == nullptr)
 			return false;
 
-		memory->setCodeSize = knf.codesize;
-		memory->setDataSize = knf.datasize;
+		memory->setCodeSize(knf.codesize);
+		memory->setDataSize(knf.datasize);
 
 		BYTE *ptr = (BYTE *)baseaddr + OFFSET_CODE;
 		void *code = &buffer[OFFSET_CODE];
@@ -50,6 +61,7 @@ namespace KNVM {
 	void KNVM::Emulate() {
 		Memory code = memory->getCodePage();
 		Memory stack = memory->getStackPage();
+		code.setCodeSize(memory->getCodeSize());
 		cpu.execute(code, stack);
 	}
 }

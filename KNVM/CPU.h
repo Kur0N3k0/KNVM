@@ -1,13 +1,10 @@
 #pragma once
 
-
 #include "Register.h"
 #include "Memory.h"
 #include "Optable.h"
 #include "types.h"
 #include "Handler.h"
-
-//#include "KNVM.h"
 
 #include <vector>
 #include <algorithm>
@@ -32,6 +29,7 @@ namespace KNVM {
 
 	public:
 		void execute(Memory &code, Memory &stack);
+		void execute(Memory &code, void *entrypoint, Memory &stack);
 		DispatchInfo *dispatch(Register<> &pc, Memory &code);
 		auto &getRegister() { return reg; }
 	};

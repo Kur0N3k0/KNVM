@@ -20,14 +20,28 @@ int main() {
 	code += Asm(OP_POP, "ebp");
 	//code += Asm(OP_RET);
 	code += Asm(OP_EXIT);
+	
+	Memory data(0x1000, PAGE_READWRITE, 4);
+	data.setDataSize(0);
 
 	Disassembler disassembler(code);
 
 	cout << disassembler.disassemble() << endl;
+	//knvm.test2(code);
 
 	::KNVM::KNVM knvm;
+	KNF knf;
+	knf.bits = KNF::KNF_X86;
+	knf.codesize = code.getCodeSize();
+	knf.datasize = 0;
+	knf.entrypoint = 0; // va
 
-	knvm.test2(code);
+	KNFBuilder builder(knf, code, data);
+	builder.build("sample.knf");
+
+	//knvm.ParseBinary(knf, code, data);
+	knvm.ParseBinary("sample.knf");
+	knvm.Emulate();
 
 	int i;
 	cin >> i;

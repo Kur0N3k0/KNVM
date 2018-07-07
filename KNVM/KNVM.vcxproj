@@ -138,6 +138,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Handler.cpp" />
+    <ClCompile Include="KNF.cpp" />
     <ClCompile Include="KNVM.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Memory.cpp" />

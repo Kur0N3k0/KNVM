@@ -5,6 +5,11 @@
 #include <iterator>
 
 namespace KNVM {
+	size_t OFFSET_CODE = 0x1000;
+	size_t OFFSET_DATA = 0x4000;
+	size_t OFFSET_STACK = 0x8000;
+	size_t MAX_MEMORY_SIZE = 0xc000;
+
 	void * _Public Memory::get() { return address; }
 	DWORD _Public Memory::getAlign() const { return align; }
 	DWORD _Public Memory::getSize() const { return size; }

@@ -20,6 +20,7 @@ namespace KNVM {
 		CPU cpu;
 		Memory *memory = nullptr;
 		PipeLine pipe;
+		void *entrypoint;
 
 	public:
 		KNVM() {
@@ -33,6 +34,7 @@ namespace KNVM {
 			memory = nullptr;
 		}
 
+		bool ParseBinary(KNF &knf, Memory &code, Memory &data);
 		bool ParseBinary(const char *path);
 		void Emulate();
 

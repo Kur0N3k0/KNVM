@@ -6,10 +6,10 @@
 #include <Windows.h>
 
 namespace KNVM {
-	size_t OFFSET_CODE = 0x1000;
-	size_t OFFSET_DATA = 0x4000;
-	size_t OFFSET_STACK = 0x8000;
-	size_t MAX_MEMORY_SIZE = 0xc000;
+	extern size_t OFFSET_CODE;
+	extern size_t OFFSET_DATA;
+	extern size_t OFFSET_STACK;
+	extern size_t MAX_MEMORY_SIZE;
 
 	class Memory {
 	private:
@@ -40,7 +40,7 @@ namespace KNVM {
 		DWORD getCodeSize() const;
 		DWORD getDataSize() const;
 		void setCodeSize(DWORD codesize);
-		void setDataSize(DWORD codesize);
+		void setDataSize(DWORD datasize);
 		Memory getCodePage() const;
 		Memory getDataPage() const;
 		Memory getStackPage() const;

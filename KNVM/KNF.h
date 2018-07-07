@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Memory.h"
+
+#include <fstream>
 #include <Windows.h>
 
 namespace KNVM {
@@ -12,10 +15,19 @@ namespace KNVM {
 			KFN_X64 = 0x64
 		} bits;
 		
-		size_t entrypoint;
+		void *entrypoint;
 		DWORD codesize;
 		DWORD datasize;
 	} KNF;
 #pragma pack(pop)
 
+	class KNFBuilder {
+	private:
+		KNF header;
+		Memory code;
+		Memory data;
+	public:
+		KNFBuilder(KNF &header, Memory &code, Memory &data) : header(header), code(code), data(data) { }
+		bool build(const char *path);
+	};
 }

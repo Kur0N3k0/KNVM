@@ -24,8 +24,6 @@ namespace KNVM {
 		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
 		reg["ebp"] = reg["esp"];
 
-		//genTestcase(code);
-
 		while (true) {
 			try {
 				DispatchInfo *dpinfo = dispatch(reg["eip"], code);
@@ -37,6 +35,35 @@ namespace KNVM {
 				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
 					throw "Dispatch Fail";
 				
+				handler.handle(dpinfo, reg, stack);
+
+				delete dpinfo;
+			}
+			catch (const char *err) {
+				std::cout << __FUNCTION__ << " -> " << err << std::endl;
+				break;
+			}
+			catch (std::exception exp) {
+				std::cout << __FUNCTION__ << " -> " << exp.what() << std::endl;
+			}
+		}
+	}
+	void _Public CPU::execute(Memory &code, void *entrypoint, Memory &stack) {
+		reg["eip"] = (DWORD)code.get() + (DWORD)entrypoint;
+		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
+		reg["ebp"] = reg["esp"];
+
+		while (true) {
+			try {
+				DispatchInfo *dpinfo = dispatch(reg["eip"], code);
+
+				if (dpinfo == nullptr)
+					throw "DispatchInfo == nullptr";
+
+				reg["eip"] += dpinfo->opcode_size;
+				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
+					throw "Dispatch Fail";
+
 				handler.handle(dpinfo, reg, stack);
 
 				delete dpinfo;
