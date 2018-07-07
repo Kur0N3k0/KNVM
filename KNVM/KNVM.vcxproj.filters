@@ -48,6 +48,15 @@
     <ClInclude Include="Asm.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="PipeLine.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Interrupt.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="KNF.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="KNVM.cpp">

@@ -41,14 +41,20 @@ namespace KNVM {
 		// Asm(OP_PUSH, "eax");
 		// Asm(OP_RET);
 		Asm(BYTE op, std::string reg, DWORD imm) : is_imm2(true) {
-			setOptype(code, OP_TYPE_IMM2);
+			if(reg[0] == '[' && reg[reg.length() - 1] == ']')
+				setOptype(code, OP_TYPE_IMM);
+			else
+				setOptype(code, OP_TYPE_IMM2);
 			setOp(code, op);
 			setLReg(code, getRegByte(getRegIdx(reg)));
 			setVal(code, imm);
 			codesize = 6;
 		}
 		Asm(BYTE op, std::string lreg, std::string rreg) {
-			setOptype(code, OP_TYPE_REG2);
+			if (lreg[0] == '[' && lreg[lreg.length() - 1] == ']')
+				setOptype(code, OP_TYPE_REG);
+			else
+				setOptype(code, OP_TYPE_REG2);
 			setOp(code, op);
 			setLReg(code, getRegByte(getRegIdx(lreg)));
 			setRReg(code, getRegByte(getRegIdx(rreg)));

@@ -9,6 +9,12 @@ namespace KNVM {
 	DWORD _Public Memory::getAlign() const { return align; }
 	DWORD _Public Memory::getSize() const { return size; }
 	DWORD _Public Memory::getCodeSize() const { return codesize; }
+	void _Public Memory::setCodeSize(DWORD codesize) { this->codesize = codesize; }
+	DWORD _Public Memory::getDataSize() const { return datasize; }
+	void _Public Memory::setDataSize(DWORD datasize) { this->datasize = datasize; }
+	Memory _Public Memory::getCodePage() const { return Memory((void *)((BYTE *)address + OFFSET_CODE), codesize); }
+	Memory _Public Memory::getDataPage() const { return Memory((void *)((BYTE *)address + OFFSET_DATA), datasize); }
+	Memory _Public Memory::getStackPage() const { return Memory((void *)((BYTE *)address + OFFSET_STACK), MAX_MEMORY_SIZE - OFFSET_STACK); }
 
 	Memory & _Public Memory::operator=(Memory &mem) {
 		if (address != nullptr)

@@ -10,7 +10,13 @@ namespace KNVM {
 		auto lreg = reg[op[0]];
 		auto rval = &op[1];
 
-		if (optype == OP_TYPE_IMM2) {
+		if (optype == OP_TYPE_IMM) {
+			*(DWORD *)lreg.get() = *(DWORD *)rval;
+		}
+		else if (optype == OP_TYPE_REG) {
+			*(DWORD *)lreg.get() = reg[*rval].get();
+		}
+		else if (optype == OP_TYPE_IMM2) {
 			lreg = *(DWORD *)rval;
 		}
 		else if (optype == OP_TYPE_REG2) {
@@ -600,7 +606,7 @@ namespace KNVM {
 			this->jmp(dpinfo, reg, stack);
 			break;
 		case OP_JE:
-			this->jmp(dpinfo, reg, stack);
+			this->je(dpinfo, reg, stack);
 			break;
 		case OP_JNE:
 			this->jne(dpinfo, reg, stack);
