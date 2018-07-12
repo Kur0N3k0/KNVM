@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\UI">
+      <UniqueIdentifier>{455d2c3d-68d6-4cbc-a5ea-2e5fd7b43189}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\UI">
+      <UniqueIdentifier>{613a6a67-3144-47d5-9bf1-4708d97e0193}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Handler.h">
@@ -57,6 +63,12 @@
     <ClInclude Include="KNF.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="SyscallTable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>헤더 파일\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="KNVM.cpp">
@@ -76,6 +88,12 @@
     </ClCompile>
     <ClCompile Include="Disassembler.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="KNF.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>소스 파일\UI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

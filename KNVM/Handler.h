@@ -44,6 +44,26 @@ namespace KNVM {
 		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
+		void syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_flush(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_system(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_socket(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_listen(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_bind(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_recv(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_send(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_closesock(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_getthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_setthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_mode(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_privilege(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_taskswitch(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+
+		
+
+	private:
 		/*
 		flags
 		7 6 5 4 3 2 1 0		7		6		   5		  4		  3		 2 1 0

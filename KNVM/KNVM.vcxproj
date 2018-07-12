@@ -132,7 +132,9 @@
     <ClInclude Include="Optable.h" />
     <ClInclude Include="PipeLine.h" />
     <ClInclude Include="Register.h" />
+    <ClInclude Include="SyscallTable.h" />
     <ClInclude Include="types.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPU.cpp" />
@@ -142,6 +144,7 @@
     <ClCompile Include="KNVM.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Memory.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

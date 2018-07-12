@@ -14,6 +14,8 @@
 #include "Disassembler.h"
 #include "KNF.h"
 
+#include "UI.h"
+
 namespace KNVM {
 	class KNVM {
 	private:

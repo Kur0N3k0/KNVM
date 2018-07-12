@@ -553,6 +553,55 @@ namespace KNVM {
 		}
 	}
 
+	void _Private Handler::syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_flush(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_system(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_socket(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_listen(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_bind(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_recv(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_send(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_closesock(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_getthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_setthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_mode(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_privilege(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+	void _Private Handler::syscall_taskswitch(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+
+	}
+
 	inline void _Private Handler::setZF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00001000; }
 	inline bool _Private Handler::getZF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00000100) >> 3) == 1; }
 	inline void _Private Handler::setCF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00010000; }

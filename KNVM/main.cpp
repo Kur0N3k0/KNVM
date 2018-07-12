@@ -43,6 +43,8 @@ int main() {
 	knvm.ParseBinary("sample.knf");
 	knvm.Emulate();
 
+	UI ui;
+
 	int i;
 	cin >> i;
 

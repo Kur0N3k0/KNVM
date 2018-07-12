@@ -11,6 +11,7 @@ namespace KNVM {
 
 		void *codebase = memory->getCodePage().get();
 		std::memcpy(codebase, code.get(), code.getCodeSize());
+		return true;
 	}
 	bool KNVM::ParseBinary(const char *path) {
 		std::ifstream file(path, std::ios::in | std::ios::binary);
