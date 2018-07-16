@@ -2,6 +2,7 @@
 
 #include "Memory.h"
 #include "Register.h"
+#include "PipeLine.h"
 #include "types.h"
 
 #include <Windows.h>
@@ -9,8 +10,9 @@
 namespace KNVM {
 #pragma pack(push, 1)
 	typedef struct Syscall {
-		const BYTE interrupt;
-		void(*callback)(DispatchInfo *, RegisterList<> &, Memory &);
+		using Callback = void(*)(DispatchInfo *, RegisterList<> &, Memory &);
+		BYTE interrupt;
+		Callback callback;
 	} Syscall;
 
 	// OS syscalls
@@ -37,27 +39,45 @@ namespace KNVM {
 		INT_USER4 = 0x13
 	} SyscallIndex;
 
-	Syscall SyscallTable[] = {
-		{ INT_EXIT, NULL },
-		{ INT_READ, NULL },
-		{ INT_WRITE, NULL },
-		{ INT_FLUSH, NULL },
-		{ INT_SYSTEM, NULL },
-		{ INT_LISTEN, NULL },
-		{ INT_BIND, NULL },
-		{ INT_RECV, NULL },
-		{ INT_SEND, NULL },
-		{ INT_CLOSESOCK, NULL },
-		{ INT_GETTHREAD, NULL },
-		{ INT_SETTHREAD, NULL },
-		{ INT_MODE, NULL },
-		{ INT_PRIVILEGE, NULL },
-		{ INT_TASKSWITCH, NULL },
-		{ INT_USER1, NULL },
-		{ INT_USER2, NULL },
-		{ INT_USER3, NULL },
-		{ INT_USER4, NULL }
-	};
+	namespace KNVM_SYSCALL {
+		void syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_flush(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_system(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_socket(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_listen(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_bind(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_recv(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_send(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_closesock(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_getthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_setthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_mode(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_privilege(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		void syscall_taskswitch(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+	}
 
+	static Syscall SyscallTable[0xff] = {
+		{ INT_EXIT, KNVM_SYSCALL::syscall_exit },
+		{ INT_READ, KNVM_SYSCALL::syscall_read },
+		{ INT_WRITE, KNVM_SYSCALL::syscall_write },
+		{ INT_FLUSH, KNVM_SYSCALL::syscall_flush },
+		{ INT_SYSTEM, KNVM_SYSCALL::syscall_system },
+		{ INT_LISTEN, KNVM_SYSCALL::syscall_listen },
+		{ INT_BIND, KNVM_SYSCALL::syscall_bind },
+		{ INT_RECV, KNVM_SYSCALL::syscall_recv },
+		{ INT_SEND, KNVM_SYSCALL::syscall_send },
+		{ INT_CLOSESOCK, KNVM_SYSCALL::syscall_closesock },
+		{ INT_GETTHREAD, KNVM_SYSCALL::syscall_getthread },
+		{ INT_SETTHREAD, KNVM_SYSCALL::syscall_setthread },
+		{ INT_MODE, KNVM_SYSCALL::syscall_mode },
+		{ INT_PRIVILEGE, KNVM_SYSCALL::syscall_privilege },
+		{ INT_TASKSWITCH, KNVM_SYSCALL::syscall_taskswitch },
+		{ INT_USER1, KNVM_SYSCALL::syscall_exit },
+		{ INT_USER2, KNVM_SYSCALL::syscall_exit },
+		{ INT_USER3, KNVM_SYSCALL::syscall_exit },
+		{ INT_USER4, KNVM_SYSCALL::syscall_exit }
+	};
 #pragma pack(pop)
 }

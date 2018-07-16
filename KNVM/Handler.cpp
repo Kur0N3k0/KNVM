@@ -563,56 +563,12 @@ namespace KNVM {
 	*/
 	void _Private Handler::syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto index = reg["eax"].get();
+		auto size = sizeof(SyscallTable) / sizeof(Syscall);
 
-		SyscallTable[index].callback(dpinfo, reg, stack);
-	}
-	void _Private Handler::syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_flush(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_system(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_socket(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_listen(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_bind(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_recv(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_send(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_closesock(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_getthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_setthread(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_mode(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_privilege(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
-	}
-	void _Private Handler::syscall_taskswitch(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
+		if (index < size)
+			SyscallTable[index].callback(dpinfo, reg, stack);
+		else
+			throw "Unknown Syscall";
 	}
 
 	inline void _Private Handler::setZF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00001000; }
@@ -709,6 +665,8 @@ namespace KNVM {
 		case OP_EXCEPT_CALL:
 			this->call_except(dpinfo, reg, stack);
 			break;
+		default:
+			throw "Illegal Instruction";
 		}
 	}
 }
