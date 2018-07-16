@@ -21,7 +21,7 @@ namespace KNVM {
 	private:
 		CPU cpu;
 		Memory *memory = nullptr;
-		PipeLine pipe;
+		PipeLine pipe_in, pipe_out;
 		void *entrypoint;
 
 	public:

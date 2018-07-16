@@ -45,21 +45,18 @@ namespace KNVM {
 
 	class PipeLine {
 	private:
-		IO kstdin;
-		IO kstdout;
+		IO io;
 
 	public:
-		PipeLine(bool in = true, bool out = true) {
-			if (in)
-				kstdin.open();
-			if (out)
-				kstdout.open();
-		}
-		void write(char *ptr, size_t size) { kstdout.write(ptr, size); }
-		void read(char *ptr, size_t size) { kstdin.read(ptr, size); }
-		void fflush(IO &io) {
+		PipeLine() { io.open(); }
+		void write(char *ptr, size_t size) { io.write(ptr, size); }
+		void read(char *ptr, size_t size) { io.read(ptr, size); }
+		void fflush() {
 			io.close();
 			io.open();
 		}
 	};
+
+	static PipeLine kstdout;
+	static PipeLine kstdin;
 }

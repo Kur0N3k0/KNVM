@@ -11,27 +11,48 @@ namespace KNVM {
 		}
 
 		/*
-		* @argument (char *, uint32_t)
+		* @argument (pipe, char *, uint32_t)
 		* @return size
 		*/
 		void _Private syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-			
+			DWORD type = reg["ebx"].get();
+			char *ptr = (char *)reg["ecx"].get();
+			DWORD size = reg["edx"].get();
+
+			if (type == 0)
+				kstdin.read(ptr, size);
+			else if (type == 1)
+				kstdout.read(ptr, size);
 		}
 
 		/*
-		* @argument (char *, uint32_t)
+		* @argument (pipe, char *, uint32_t)
 		* @return size
 		*/
 		void _Private syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+			DWORD type = reg["ebx"].get();
+			char *ptr = (char *)reg["ecx"].get();
+			DWORD size = reg["edx"].get();
 
+			if (type == 0)
+				kstdin.write(ptr, size);
+			else if (type == 1)
+				kstdout.write(ptr, size);
 		}
 
 		/*
-		* @argument (stdio)
+		* @argument (pipe)
 		* @return size
 		*/
 		void _Private syscall_flush(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+			DWORD type = reg["ebx"].get();
+			char *ptr = (char *)reg["ecx"].get();
+			DWORD size = reg["edx"].get();
 
+			if (type == 0)
+				kstdin.fflush();
+			else
+				kstdout.fflush();
 		}
 
 		/*
@@ -39,7 +60,8 @@ namespace KNVM {
 		* @return void
 		*/
 		void _Private syscall_system(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-
+			char *ptr = (char *)reg["ecx"].get();
+			
 		}
 
 		/*
