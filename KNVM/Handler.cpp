@@ -553,6 +553,19 @@ namespace KNVM {
 		}
 	}
 
+	/*
+	* eax = syscall idx
+	* ebx = arg1
+	* ecx = arg2
+	* edx = arg3
+	* esi = arg4
+	* edi = arg5
+	*/
+	void _Private Handler::syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto index = reg["eax"].get();
+
+		SyscallTable[index].callback(dpinfo, reg, stack);
+	}
 	void _Private Handler::syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 
 	}
@@ -683,6 +696,9 @@ namespace KNVM {
 			break;
 		case OP_EXIT:
 			this->exit(dpinfo, reg, stack);
+			break;
+		case OP_SYSCALL:
+			this->syscall(dpinfo, reg, stack);
 			break;
 		case OP_ADD_EXCEPT:
 			this->add_except(dpinfo, reg, stack);

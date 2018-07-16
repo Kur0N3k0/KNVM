@@ -4,6 +4,7 @@
 #include "Memory.h"
 #include "Register.h"
 #include "FuncException.h"
+#include "SyscallTable.h"
 
 namespace KNVM {
 	class Handler {
@@ -44,6 +45,7 @@ namespace KNVM {
 		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
+		void syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void syscall_read(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 		void syscall_write(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
