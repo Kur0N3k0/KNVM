@@ -5,7 +5,10 @@
 #include "PipeLine.h"
 #include "types.h"
 
+#include <cstdio>
 #include <Windows.h>
+
+#pragma comment(lib, "ws2_32.lib")
 
 namespace KNVM {
 #pragma pack(push, 1)

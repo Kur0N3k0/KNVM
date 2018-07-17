@@ -34,6 +34,7 @@ namespace KNVM {
 			std::memcpy(buffer, ptr, size);
 			buffer[size] = 0;
 			std::cout << buffer;
+			return size;
 		}
 		void close() {
 			if (buffer)

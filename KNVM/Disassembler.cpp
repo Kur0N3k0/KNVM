@@ -593,6 +593,7 @@ namespace KNVM {
 				delete dpinfo;
 			}
 			catch (const char *err) {
+				std::cout << err << std::endl;
 				break;
 			}
 			catch (std::exception exp) {
