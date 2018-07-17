@@ -42,11 +42,10 @@ int main() {
 	fn1 += Asm(OP_MOV, "eax", INT_EXIT);
 	fn1 += Asm(OP_MOV, "ebx", 0);
 	fn1 += Asm(OP_SYSCALL);
-	fn1 += Asm(OP_EXIT);
 
+	code += fn1;
 	code += Asm(OP_ADD_EXCEPT, (DWORD)fn1.getBase());
 	code += Asm(OP_EXCEPT_CALL, (DWORD)fn1.getBase());
-	code += fn1;
 
 	//code += Asm(OP_MOV, "eax", INT_READ);
 	//code += Asm(OP_MOV, "ebx", 0); // stdin
@@ -77,7 +76,7 @@ int main() {
 	knf.bits = KNF::KNF_X86;
 	knf.codesize = code.getCodeSize();
 	knf.datasize = 0;
-	knf.entrypoint = 0; // va
+	knf.entrypoint = (void *)fn1.getSize(); // va
 
 	KNFBuilder builder(knf, code, data);
 	builder.build("sample.knf");

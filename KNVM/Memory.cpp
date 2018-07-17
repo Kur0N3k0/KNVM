@@ -67,7 +67,7 @@ namespace KNVM {
 		
 		return *this;
 	}
-	Memory &_Public Memory::operator+=(Function func) {
+	Memory &_Public Memory::operator+=(Function &func) {
 		DWORD size = func.getSize();
 		auto funcname = func.getName();
 		auto funcasmbly = func.getAsmbly();

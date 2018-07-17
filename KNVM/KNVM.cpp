@@ -41,6 +41,8 @@ namespace KNVM {
 		//if (knf.entrypoint < (void *)OFFSET_CODE || knf.entrypoint >= (void *)OFFSET_DATA)
 		//	return false;
 
+		entrypoint = knf.entrypoint;
+
 		void *baseaddr = memory->get();
 		if (baseaddr == nullptr)
 			return false;
@@ -63,6 +65,6 @@ namespace KNVM {
 		Memory code = memory->getCodePage();
 		Memory stack = memory->getStackPage();
 		code.setCodeSize(memory->getCodeSize());
-		cpu.execute(code, stack);
+		cpu.execute(code, entrypoint, stack);
 	}
 }

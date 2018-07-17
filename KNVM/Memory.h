@@ -56,6 +56,6 @@ namespace KNVM {
 		void *operator+=(DWORD p);
 		void *operator-=(DWORD p);
 		Memory &operator+=(Asm asmbly);
-		Memory &operator+=(Function func);
+		Memory &operator+=(Function &func);
 	};
 }
