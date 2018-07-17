@@ -6,9 +6,10 @@
 
 namespace KNVM {
 	class Memory;
+	class Function;
 
 	class Asm {
-	private:
+	protected:
 		void setOptype(BYTE *op, BYTE type) { op[0] = op[0] | (type << 6); }
 		void setOp(BYTE *op, BYTE oper) { op[0] = op[0] | (oper & 0b00111111); }
 		void setLReg(BYTE *op, BYTE reg) { op[1] = reg; }
@@ -84,5 +85,6 @@ namespace KNVM {
 		}
 		
 		friend class Memory;
+		friend class Function;
 	};
 }

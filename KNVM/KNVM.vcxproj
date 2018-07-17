@@ -123,6 +123,7 @@
     <ClInclude Include="Disassembler.h" />
     <ClInclude Include="Emulator.h" />
     <ClInclude Include="FuncException.h" />
+    <ClInclude Include="Function.h" />
     <ClInclude Include="Handler.h" />
     <ClInclude Include="Interrupt.h" />
     <ClInclude Include="KNF.h" />

@@ -8,7 +8,7 @@ namespace KNVM {
 		*/
 		void _Private syscall_exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 			reg["eax"].set(reg["ebx"].get());
-			throw "Program Exit";
+			throw "Program Exit(Interrupt)";
 		}
 
 		/*

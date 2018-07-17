@@ -8,6 +8,7 @@
 #include "Optable.h"
 
 #include "Asm.h"
+#include "Function.h"
 #include "Memory.h"
 #include "PipeLine.h"
 #include "CPU.h"

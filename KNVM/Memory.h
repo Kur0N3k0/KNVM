@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
 
 #include "Asm.h"
+#include "Function.h"
 #include <Windows.h>
 
 namespace KNVM {
@@ -21,6 +22,9 @@ namespace KNVM {
 		DWORD protect;
 		DWORD align;
 		bool is_sub = false;
+
+	private:
+		std::unordered_map<std::string, Function> funcmap;
 
 	public:
 		Memory(void *addr, DWORD size) : address(addr), baseaddr(addr), size(size) { this->is_sub = true; }
@@ -52,5 +56,6 @@ namespace KNVM {
 		void *operator+=(DWORD p);
 		void *operator-=(DWORD p);
 		Memory &operator+=(Asm asmbly);
+		Memory &operator+=(Function func);
 	};
 }

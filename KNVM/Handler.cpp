@@ -7,7 +7,7 @@ namespace KNVM {
 		auto opsize = dpinfo->opcode_size;
 		auto optype = dpinfo->opcode_type;
 		auto op = dpinfo->opcodes;
-		auto lreg = reg[op[0]];
+		auto &lreg = reg[op[0]];
 		auto rval = &op[1];
 
 		if (optype == OP_TYPE_IMM) {
@@ -438,8 +438,8 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 
 		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			fnExp.add_except(ptr);
+			DWORD ptr = *(DWORD *)&op[0];
+			fnExp.add_except((void *)ptr);
 		}
 		else if (optype == OP_TYPE_REG) {
 			auto &lreg = reg[op[0]];
@@ -455,8 +455,8 @@ namespace KNVM {
 		auto op = dpinfo->opcodes;
 
 		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			fnExp.del_except(ptr);
+			DWORD ptr = *(DWORD *)&op[0];
+			fnExp.del_except((void *)ptr);
 		}
 		else if (optype == OP_TYPE_REG) {
 			auto &lreg = reg[op[0]];
@@ -473,15 +473,14 @@ namespace KNVM {
 		auto eip = reg["eip"].get();
 
 		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			if (!fnExp.is_func(ptr))
+			DWORD ptr = *(DWORD *)&op[0];
+			if (!fnExp.is_func((void *)ptr))
 				throw "Not Defined Function";
 			
 			DWORD retaddr = eip  + opsize;
-			reg["eip"] = (DWORD)ptr;
+			reg["eip"] = ptr;
 			reg["esp"] -= stack.getAlign();
-			ptr = *reg["esp"];
-			*ptr = retaddr;
+			*(DWORD *)reg["esp"].get() = retaddr;
 		}
 		else if (optype == OP_TYPE_REG) {
 			auto &lreg = reg[op[0]];
@@ -492,8 +491,7 @@ namespace KNVM {
 			DWORD retaddr = eip + opsize;
 			reg["eip"] = (DWORD)ptr;
 			reg["esp"] -= stack.getAlign();
-			ptr = *reg["esp"];
-			*ptr = retaddr;
+			*(DWORD *)reg["esp"].get() = retaddr;
 		}
 		else {
 			throw "Unknown Operand Type";
@@ -565,6 +563,7 @@ namespace KNVM {
 		auto index = reg["eax"].get();
 		auto size = sizeof(SyscallTable) / sizeof(Syscall);
 
+		reg["eip"] -= 1;
 		if (index < size)
 			SyscallTable[index].callback(dpinfo, reg, stack);
 		else

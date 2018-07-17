@@ -67,4 +67,23 @@ namespace KNVM {
 		
 		return *this;
 	}
+	Memory &_Public Memory::operator+=(Function func) {
+		DWORD size = func.getSize();
+		auto funcname = func.getName();
+		auto funcasmbly = func.getAsmbly();
+		BYTE *code = (BYTE *)address + codesize;
+		
+		func.setBase(code);
+
+		for (auto iter = funcasmbly.begin(); iter != funcasmbly.end(); iter++) {
+			if (code + iter->codesize > (BYTE *)address + this->size)
+				throw "Code Memory Exceeded";
+			std::memcpy(code, iter->code, iter->codesize);
+			code += iter->codesize;
+			codesize += iter->codesize;
+		}
+
+		funcmap.insert(std::pair<std::string, Function>(funcname, func));
+		return *this;
+	}
 }
