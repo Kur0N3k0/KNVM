@@ -60,11 +60,14 @@ namespace KNVM {
 				if (dpinfo == nullptr)
 					throw "DispatchInfo == nullptr";
 
-				reg["eip"] += dpinfo->opcode_size;
 				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
 					throw "Dispatch Fail";
 
-				handler.handle(dpinfo, reg, stack);
+				DWORD handled_size = handler.handle(dpinfo, reg, stack);
+				if (handled_size == 0)
+					throw "Handling Fail";
+
+				reg["eip"] += handled_size;
 
 				delete dpinfo;
 			}
@@ -83,10 +86,18 @@ namespace KNVM {
 		if (addr > (BYTE *)code.get() + code.getSize()) 
 			throw "Segmentation Fault";
 
-		BYTE opcode = (addr[0] & 0b00111111);
-		BYTE optype = (addr[0] & 0b11000000) >> 6;
+		/*
+		* opcode sequences
+		* opcodes  reg, imm, reg_ptr, imm_ptr
+		* [][    ] [                                          ]
+		* 00000000 00000000 00000000 00000000 00000000 00000000
+		*/
 
-		DWORD opsize;
+		BYTE opcode = (addr[0] & 0b00111111);
+		BYTE opercnt = (addr[0] & 0b11000000) >> 6;
+
+		DWORD opsize, opsize2;
+		/*
 		switch (optype) {
 		case OP_TYPE_IMM:
 			opsize = 4;
@@ -100,14 +111,68 @@ namespace KNVM {
 		case OP_TYPE_IMM2:
 			opsize = 5;
 			break;
+
 		default:
 			return nullptr;
 		}
+		*/
 
 		DispatchInfo *dpinfo = new DispatchInfo;
 		dpinfo->opcode = opcode;
-		dpinfo->opcode_type = optype;
-		dpinfo->opcode_size = opsize + 1;
+		//dpinfo->opcode_type = optype;
+		//dpinfo->opcode_size = opsize + 1;
+
+		// for register
+		// [ type 2bit ][ reg idx 6bit ]
+		// for imm
+		// [ type 2bit ][   null 6bit  ][ imm 4byte ]
+		BYTE optype = (addr[1] & 0b11000000) >> 6;
+		BYTE reg = (addr[1] & 0b00111111);
+		switch(optype){
+		case OP_TYPE_REG:
+			opsize = 1;
+			dpinfo->operand[0] = new Operand(optype, &reg, 1);
+			break;
+		case OP_TYPE_IMM:
+			opsize = 4;
+			dpinfo->operand[0] = new Operand(optype, &addr[2], 4);
+			break;
+		case OP_TYPE_PTR_REG:
+			opsize = 1;
+			dpinfo->operand[0] = new Operand(optype, &reg, 1, true);
+			break;
+		case OP_TYPE_PTR_IMM:
+			opsize = 4;
+			dpinfo->operand[0] = new Operand(optype, &addr[2], 4, true);
+			break;
+		}
+
+		if (opercnt == 0b10) {
+			optype = addr[1 + opsize];
+
+			BYTE sOptype = optype;
+			optype = (sOptype & 0b11000000) >> 6;
+			reg = (sOptype & 0b00111111);
+			switch (optype) {
+			case OP_TYPE_REG: 
+				dpinfo->operand[1] = new Operand(optype, &reg, 1);
+				opsize += 1;
+				break;
+			case OP_TYPE_IMM:
+				dpinfo->operand[1] = new Operand(optype, &addr[2 + opsize], 4);
+				opsize += 4;
+				break;
+			case OP_TYPE_PTR_REG:
+				dpinfo->operand[1] = new Operand(optype, &reg, true);
+				opsize += 1;
+				break;
+			case OP_TYPE_PTR_IMM:
+				dpinfo->operand[1] = new Operand(optype, &addr[2 + opsize + 1], 4, true);
+				opsize += 4;
+				break;
+			}
+		}
+		
 		dpinfo->opcodes = new BYTE[opsize + 1];
 		std::memcpy(dpinfo->opcodes, &addr[1], opsize + 1);
 

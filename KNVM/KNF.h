@@ -16,7 +16,9 @@ namespace KNVM {
 		} bits;
 		
 		void *entrypoint;
+		DWORD codeoffset;
 		DWORD codesize;
+		DWORD dataoffset;
 		DWORD datasize;
 	} KNF;
 #pragma pack(pop)

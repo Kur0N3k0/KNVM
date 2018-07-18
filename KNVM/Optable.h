@@ -11,6 +11,9 @@ namespace KNVM {
 	const BYTE OP_TYPE_REG2 = 2;
 	const BYTE OP_TYPE_IMM2 = 3;
 
+	const BYTE OP_TYPE_PTR_REG = 2;
+	const BYTE OP_TYPE_PTR_IMM = 3;
+
 	/*
 	Opcode Table
 	*/

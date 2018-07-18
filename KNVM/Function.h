@@ -13,6 +13,9 @@ namespace KNVM {
 		std::string name;
 		std::vector<Asm> asmbly;
 
+	private:
+		DWORD label;
+
 	public:
 		Function(std::string name) : size(0), name(name) { }
 		Function &operator+(Asm &asmbly) {
@@ -30,7 +33,9 @@ namespace KNVM {
 		DWORD getSize() const { return size; }
 		std::string &getName() { return name; }
 		std::vector<Asm> &getAsmbly() { return asmbly; }
+		DWORD getLabel() const { return label; }
 		
 		void setBase(void *base) { this->base = base; }
+		void setLabel(DWORD label) { this->label = label; }
 	};
 }

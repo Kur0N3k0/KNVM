@@ -6,46 +6,48 @@
 #include "FuncException.h"
 #include "SyscallTable.h"
 
+#include <Windows.h>
+
 namespace KNVM {
 	class Handler {
 	private:
-		void mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
-		void add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
-		void and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
-		void jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
-		void cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
-		void exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
 		FuncException fnExp;
 
-		void add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
-		void call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
-		void syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 
 	private:
 		/*
@@ -65,6 +67,6 @@ namespace KNVM {
 		inline bool getDF(RegisterList<> &reg);
 
 	public:
-		void handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
+		DWORD handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack);
 	};
 }

@@ -32,8 +32,8 @@ namespace KNVM {
 				return -1;
 
 			fgets(buffer, size, stdin);
-			buffer[size] = 0;
-			memcpy(ptr, buffer, size);
+			std::memcpy(ptr, buffer, size);
+			ptr[size] = 0;
 			return size;
 		}
 		void close() {

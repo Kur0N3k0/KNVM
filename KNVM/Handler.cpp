@@ -3,552 +3,1398 @@
 #include "Optable.h"
 
 namespace KNVM {
-	void _Private Handler::mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
+	DWORD _Private Handler::mov(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM) {
-			*(DWORD *)lreg.get() = *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() = *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() = *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() = ptr;
+					}
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg = *(DWORD *)rreg.get();
+					}
+					else {
+						lreg = rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg = *(DWORD *)ptr;
+					}
+					else {
+						lreg = ptr;
+					}
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			*(DWORD *)lreg.get() = reg[*rval].get();
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr = *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr = *(DWORD *)ptr;
+					}
+					else {
+						*lptr = ptr;
+					}
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else if (optype == OP_TYPE_IMM2) {
-			lreg = *(DWORD *)rval;
-		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg = reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
+
+		return 1 + opreg->getSize() + 1 +opreg2->getSize();
 	}
-	void _Private Handler::push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto lval = &op[0];
+	DWORD _Private Handler::push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
 		DWORD sbase = (DWORD)stack.get();
 
-		if (optype == OP_TYPE_IMM) {
-			if (reg["esp"] <= sbase)
-				throw "Stack Memory Top Reached";
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
 
-			reg["esp"] -= stack.getAlign();
-			DWORD *ptr = *reg["esp"];
-			*ptr = *(DWORD *)lval;
-		}
-		else if (optype == OP_TYPE_REG) {
-			if (reg["esp"] <= sbase)
-				throw "Stack Memory Top Reached";
+			if (opreg->is_indirect()) {
+				if (reg["esp"] <= sbase)
+					throw "Stack Memory Top Reached";
 
-			reg["esp"] -= stack.getAlign();
-			DWORD val = reg[*lval].get();
-			DWORD *ptr = *reg["esp"];
-			*ptr = val;
+				reg["esp"] -= stack.getAlign();
+				DWORD *ptr = *reg["esp"];
+				DWORD val = lreg.get();
+				*ptr = *(DWORD *)val;
+			}
+			else {
+				if (reg["esp"] <= sbase)
+					throw "Stack Memory Top Reached";
+
+				reg["esp"] -= stack.getAlign();
+				DWORD *ptr = *reg["esp"];
+				*ptr = lreg.get();
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				if (reg["esp"] <= sbase)
+					throw "Stack Memory Top Reached";
+
+				reg["esp"] -= stack.getAlign();
+				DWORD *ptr = *reg["esp"];
+				DWORD val = *(DWORD *)bytes;
+				*ptr = *(DWORD *)val;
+			}
+			else {
+				if (reg["esp"] <= sbase)
+					throw "Stack Memory Top Reached";
+
+				reg["esp"] -= stack.getAlign();
+				DWORD *ptr = *reg["esp"];
+				*ptr = *(DWORD *)bytes;
+			}
 		}
+
+		return 1 + opreg->getSize();
 	}
-	void _Private Handler::pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto lval = &op[0];
+	DWORD _Private Handler::pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
 		DWORD sbase = (DWORD)stack.get();
 
-		if (optype == OP_TYPE_REG) {
-			if (reg["esp"] >= sbase + stack.getSize())
-				throw "Stack Memory Exceeded";
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
 
-			DWORD *ptr = *reg["esp"];
-			DWORD val = *ptr;
-			reg["esp"] += stack.getAlign();
+			if (opreg->is_indirect()) {
+				throw "Unknown Operand Type";
+			}
+			else {
+				if (reg["esp"] >= sbase + stack.getSize())
+					throw "Stack Memory Exceeded";
 
-			reg[*lval] = val;
+				DWORD *ptr = *reg["esp"];
+				DWORD val = *ptr;
+				reg["esp"] += stack.getAlign();
+
+				reg[bytes[0]] = val;
+			}
 		}
-		else {
+		else if (type == OP_TYPE_IMM) {
 			throw "Unknown Operand Type";
 		}
+
+		return 1 + opreg->getSize();
 	}
-	void _Private Handler::ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto lval = &op[0];
+	DWORD _Private Handler::ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		DWORD sbase = (DWORD)stack.get();
 
-		if (optype == OP_TYPE_REG) {
-			if (reg["esp"] >= sbase + stack.getSize())
-				throw "Stack Memory Exceeded";
+		if (reg["esp"] >= sbase + stack.getSize())
+			throw "Stack Memory Exceeded";
 
-			reg["eip"] -= 1;
-
-			DWORD *ptr = *reg["esp"];
-			reg["eip"] = *ptr;
-			reg["esp"] += stack.getAlign();
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
+		DWORD *ptr = *reg["esp"];
+		reg["eip"] = *ptr;
+		reg["esp"] += stack.getAlign();
+		return 1;
 	}
 
-	void _Private Handler::add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		Register<> prev_lreg = lreg;
+	DWORD _Private Handler::add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg += *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD prev_value, value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				prev_value = *(DWORD *)lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() += *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() += rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() += *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() += ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				prev_value = lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg += *(DWORD *)rreg.get();
+					}
+					else {
+						lreg += rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg += *(DWORD *)ptr;
+					}
+					else {
+						lreg += ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg += reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				prev_value = *lptr;
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr += *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr += rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr += *(DWORD *)ptr;
+					}
+					else {
+						*lptr += ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
-		if (lreg < prev_lreg) {
+		if (value < prev_value) {
 			setCF(reg);
 			setOF(reg);
 		}
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		Register<> prev_lreg = lreg;
+	DWORD _Private Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg -= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD prev_value, value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				prev_value = *(DWORD *)lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() -= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() -= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() -= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() -= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				prev_value = lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg -= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg -= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg -= *(DWORD *)ptr;
+					}
+					else {
+						lreg -= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg -= reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				prev_value = *lptr;
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr -= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr -= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr -= *(DWORD *)ptr;
+					}
+					else {
+						*lptr -= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
-		if (lreg > prev_lreg) {
+		if (value > prev_value) {
 			setCF(reg);
 			setOF(reg);
 		}
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		Register<> prev_lreg = lreg;
+	DWORD _Private Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg *= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD prev_value, value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				prev_value = *(DWORD *)lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() *= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() *= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() *= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() *= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				prev_value = lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg *= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg *= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg *= *(DWORD *)ptr;
+					}
+					else {
+						lreg *= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg *= reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				prev_value = *lptr;
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr *= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr *= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr *= *(DWORD *)ptr;
+					}
+					else {
+						*lptr *= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
-		if (lreg < prev_lreg) {
+		if (value < prev_value) {
 			setCF(reg);
 			setOF(reg);
 		}
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
+	DWORD _Private Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			if (*(DWORD *)rval == 0)
-				throw "Divide by zero";
-			lreg /= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() /= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() /= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() /= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() /= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg /= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg /= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg /= *(DWORD *)ptr;
+					}
+					else {
+						lreg /= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			auto &val = reg[*rval];
-			if (val == 0)
-				throw "Divide by zero";
-			lreg /= val;
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr /= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr /= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr /= *(DWORD *)ptr;
+					}
+					else {
+						*lptr /= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
 
-	void _Private Handler::and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
+	DWORD _Private Handler::and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg &= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() &= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() &= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() &= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() &= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg &= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg &= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg &= *(DWORD *)ptr;
+					}
+					else {
+						lreg &= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg &= reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr &= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr &= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr &= *(DWORD *)ptr;
+					}
+					else {
+						*lptr &= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
+	DWORD _Private Handler::or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg |= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() |= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() |= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() |= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() |= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg |= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg |= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg |= *(DWORD *)ptr;
+					}
+					else {
+						lreg |= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg |= reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr |= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr |= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr |= *(DWORD *)ptr;
+					}
+					else {
+						*lptr |= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
+	DWORD _Private Handler::xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			lreg ^= *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() ^= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() ^= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() ^= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() ^= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg ^= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg ^= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg ^= *(DWORD *)ptr;
+					}
+					else {
+						lreg ^= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			lreg ^= reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr ^= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr ^= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr ^= *(DWORD *)ptr;
+					}
+					else {
+						*lptr ^= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (lreg == 0)
+		if (value == 0)
 			setZF(reg);
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
 
-	void _Private Handler::jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+	DWORD _Private Handler::jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			reg["eip"] = eip + opsize + offset;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			reg["eip"] = lreg;
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
+
+		return 0;
 	}
-	void _Private Handler::je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+	DWORD _Private Handler::je(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if(getZF(reg))
-				reg["eip"] = eip + opsize + offset;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (!getZF(reg)) 
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if(getZF(reg))
-				reg["eip"] = lreg;
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
+
+		return 0;
 	}
-	void _Private Handler::jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+	DWORD _Private Handler::jne(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if (!getZF(reg))
-				reg["eip"] = eip + opsize + offset;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (getZF(reg))
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if (!getZF(reg))
-				reg["eip"] = lreg;
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
+
+		return 0;
 	}
-	void _Private Handler::ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+	DWORD _Private Handler::ja(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if(!getCF(reg) && !getZF(reg))
-				reg["eip"] = eip + opsize + offset;
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if (!getCF(reg) && !getZF(reg))
-				reg["eip"] = lreg;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if (getCF(reg))
-				reg["eip"] = eip + opsize + offset;
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if (getCF(reg))
-				reg["eip"] = lreg;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+		if (!(!getCF(reg) && !getZF(reg)))
+			return 1 + opreg->getSize();
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if(getNF(reg) != getOF(reg))
-				reg["eip"] = eip + opsize + offset;
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if (getNF(reg) != getOF(reg))
-				reg["eip"] = lreg;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if (getZF(reg) || getNF(reg) != getOF(reg))
-				reg["eip"] = eip + opsize + offset;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if (getZF(reg) || getNF(reg) != getOF(reg))
-				reg["eip"] = lreg;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
-
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			if(getZF(reg))
-				reg["eip"] = eip + opsize + offset;
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			if(getZF(reg))
-				reg["eip"] = lreg;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto lval = &op[0];
-		DWORD sbase = (DWORD)stack.get();
-
-		if (optype == OP_TYPE_REG) {
-			throw "Program Exit";
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-
-	void _Private Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-
-		if (optype == OP_TYPE_IMM) {
-			DWORD ptr = *(DWORD *)&op[0];
-			fnExp.add_except((void *)ptr);
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			fnExp.add_except((void *)lreg.get());
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-
-		if (optype == OP_TYPE_IMM) {
-			DWORD ptr = *(DWORD *)&op[0];
-			fnExp.del_except((void *)ptr);
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			fnExp.del_except((void *)lreg.get());
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	void _Private Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto eip = reg["eip"].get();
-
-		if (optype == OP_TYPE_IMM) {
-			DWORD ptr = *(DWORD *)&op[0];
-			if (!fnExp.is_func((void *)ptr))
-				throw "Not Defined Function";
-			
-			DWORD retaddr = eip  + opsize;
-			reg["eip"] = ptr;
-			reg["esp"] -= stack.getAlign();
-			*(DWORD *)reg["esp"].get() = retaddr;
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			DWORD *ptr = *lreg;
-			if (!fnExp.is_func(ptr))
-				throw "Not Defined Function";
-
-			DWORD retaddr = eip + opsize;
-			reg["eip"] = (DWORD)ptr;
-			reg["esp"] -= stack.getAlign();
-			*(DWORD *)reg["esp"].get() = retaddr;
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-
-	void _Private Handler::cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		Register<> prev_lreg = lreg;
-
-		DWORD result;
-		if (optype == OP_TYPE_IMM2) {
-			result = lreg - *(DWORD *)rval;
-		}
-		else if (optype == OP_TYPE_REG2) {
-			result = lreg - reg[*rval];
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
 		}
 		else {
 			throw "Unknown Operand Type";
 		}
 
-		if (result == 0)
+		return 0;
+	}
+	DWORD _Private Handler::jb(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (!getCF(reg))
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 0;
+	}
+	DWORD _Private Handler::jl(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (getNF(reg) == getOF(reg))
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 0;
+	}
+	DWORD _Private Handler::jle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (!(getZF(reg) || getNF(reg) != getOF(reg)))
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 0;
+	}
+	DWORD _Private Handler::jz(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (!getZF(reg))
+			return 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)lreg.get();
+			}
+			else {
+				reg["eip"] = lreg.get();
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD value = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				reg["eip"] = *(DWORD *)value;
+			}
+			else {
+				reg["eip"] = value;
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 0;
+	}
+	DWORD _Private Handler::exit(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		throw "Program Exit";
+		return 0;
+	}
+
+	DWORD _Private Handler::add_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+			DWORD func = lreg.get();
+			if (opreg->is_indirect()) {
+				fnExp.add_except((void *)(*(DWORD *)func));
+			}
+			else {
+				fnExp.add_except((void *)func);
+			}
+		}
+		else if(type == OP_TYPE_IMM) {
+			DWORD func = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				fnExp.add_except((void *)(*(DWORD *)func));
+			}
+			else {
+				fnExp.add_except((void *)func);
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 1 + opreg->getSize();
+	}
+	DWORD _Private Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+			DWORD func = lreg.get();
+			if (opreg->is_indirect()) {
+				fnExp.del_except((void *)(*(DWORD *)func));
+			}
+			else {
+				fnExp.del_except((void *)func);
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD func = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				fnExp.del_except((void *)(*(DWORD *)func));
+			}
+			else {
+				fnExp.del_except((void *)func);
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		return 1 + opreg->getSize();
+	}
+	DWORD _Private Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD retaddr = reg["eip"] + 1 + opreg->getSize();
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+			DWORD func = lreg.get();
+			if (opreg->is_indirect()) {
+				if(!fnExp.is_func((void *)(*(DWORD *)func)))
+					throw "Not Defined Function";
+
+				reg["eip"] = *(DWORD *)func;
+			}
+			else {
+				if (!fnExp.is_func((void *)func))
+					throw "Not Defined Function";
+
+				reg["eip"] = func;
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			DWORD func = *(DWORD *)bytes;
+			if (opreg->is_indirect()) {
+				if (!fnExp.is_func((void *)(*(DWORD *)func)))
+					throw "Not Defined Function";
+
+				reg["eip"] = *(DWORD *)func;
+			}
+			else {
+				if (!fnExp.is_func((void *)func))
+					throw "Not Defined Function";
+
+				reg["eip"] = func;
+			}
+		}
+		else {
+			throw "Unknown Operand Type";
+		}
+
+		reg["esp"] -= stack.getAlign();
+		*(DWORD *)reg["esp"].get() = retaddr;
+
+		return 0;
+	}
+
+	DWORD _Private Handler::cmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD prev_value, value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				prev_value = *(DWORD *)lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() -= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() -= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() -= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() -= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				prev_value = lreg.get();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg -= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg -= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg -= *(DWORD *)ptr;
+					}
+					else {
+						lreg -= ptr;
+					}
+				}
+				value = lreg.get();
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				prev_value = *lptr;
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr -= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr -= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr -= *(DWORD *)ptr;
+					}
+					else {
+						*lptr -= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
+		}
+
+		if (value == 0)
 			setZF(reg);
-		if (prev_lreg < result) {
+		if (value > prev_value) {
 			setCF(reg);
 			setOF(reg);
 		}
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
-	void _Private Handler::test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		Register<> prev_lreg = lreg;
+	DWORD _Private Handler::test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		DWORD result;
-		if (optype == OP_TYPE_IMM2) {
-			result = lreg & *(DWORD *)rval;
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+		DWORD value;
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() &= *(DWORD *)rreg.get();
+					}
+					else {
+						*(DWORD *)lreg.get() &= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*(DWORD *)lreg.get() &= *(DWORD *)ptr;
+					}
+					else {
+						*(DWORD *)lreg.get() &= ptr;
+					}
+				}
+				value = *(DWORD *)lreg.get();
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						lreg &= *(DWORD *)rreg.get();
+					}
+					else {
+						lreg &= rreg;
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						lreg &= *(DWORD *)ptr;
+					}
+					else {
+						lreg &= ptr;
+					}
+				}
+				value = lreg.get();
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			result = lreg & reg[*rval];
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				DWORD *lptr = (DWORD *)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						*lptr &= *(DWORD *)rreg.get();
+					}
+					else {
+						*lptr &= rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						*lptr &= *(DWORD *)ptr;
+					}
+					else {
+						*lptr &= ptr;
+					}
+				}
+				value = *lptr;
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		if (result == 0)
+		if (value == 0)
 			setZF(reg);
-		if (prev_lreg < result) {
-			setCF(reg);
-			setOF(reg);
-		}
+
+		return 1 + opreg->getSize() + 1 + opreg2->getSize();
 	}
 
 	/*
@@ -559,111 +1405,86 @@ namespace KNVM {
 	* esi = arg4
 	* edi = arg5
 	*/
-	void _Private Handler::syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	DWORD _Private Handler::syscall(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto index = reg["eax"].get();
 		auto size = sizeof(SyscallTable) / sizeof(Syscall);
 
-		reg["eip"] -= 1;
 		if (index < size)
 			SyscallTable[index].callback(dpinfo, reg, stack);
 		else
 			throw "Unknown Syscall";
+
+		return 1;
 	}
 
 	inline void _Private Handler::setZF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00001000; }
-	inline bool _Private Handler::getZF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00000100) >> 3) == 1; }
+	inline bool _Private Handler::getZF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00001000) >> 3) == 1; }
 	inline void _Private Handler::setCF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00010000; }
-	inline bool _Private Handler::getCF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 4) == 1; }
+	inline bool _Private Handler::getCF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00010000) >> 4) == 1; }
 	inline void _Private Handler::setOF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00100000; }
-	inline bool _Private Handler::getOF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 5) == 1; }
+	inline bool _Private Handler::getOF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00100000) >> 5) == 1; }
 	inline void _Private Handler::setNF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b00100000; }
-	inline bool _Private Handler::getNF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 6) == 1; }
+	inline bool _Private Handler::getNF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b00100000) >> 6) == 1; }
 	inline void _Private Handler::setDF(RegisterList<> &reg) { reg["flags"] = reg["flags"].get() | 0b01000000; }
-	inline bool _Private Handler::getDF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b0000100) >> 7) == 1; }
+	inline bool _Private Handler::getDF(RegisterList<> &reg) { return ((reg["flags"].get() & 0b01000000) >> 7) == 1; }
 
-	void _Public Handler::handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
+	DWORD _Public Handler::handle(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		if (dpinfo == nullptr)
-			return;
-		
+			return 0;
+
 		switch (dpinfo->opcode) {
 		case OP_PUSH:
-			this->push(dpinfo, reg, stack);
-			break;
+			return this->push(dpinfo, reg, stack);
 		case OP_POP:
-			this->pop(dpinfo, reg, stack);
-			break;
+			return this->pop(dpinfo, reg, stack);
 		case OP_MOV:
-			this->mov(dpinfo, reg, stack);
-			break;
+			return this->mov(dpinfo, reg, stack);
 		case OP_RET:
-			this->ret(dpinfo, reg, stack);
-			break;
+			return this->ret(dpinfo, reg, stack);
 		case OP_ADD:
-			this->add(dpinfo, reg, stack);
-			break;
+			return this->add(dpinfo, reg, stack);
 		case OP_SUB:
-			this->sub(dpinfo, reg, stack);
-			break;
+			return this->sub(dpinfo, reg, stack);
 		case OP_MUL:
-			this->mul(dpinfo, reg, stack);
-			break;
+			return this->mul(dpinfo, reg, stack);
 		case OP_DIV:
-			this->mul(dpinfo, reg, stack);
-			break;
+			return this->mul(dpinfo, reg, stack);
 		case OP_AND:
-			this->and(dpinfo, reg, stack);
-			break;
+			return this->and(dpinfo, reg, stack);
 		case OP_OR:
-			this->or(dpinfo, reg, stack);
-			break;
+			return this->or(dpinfo, reg, stack);
 		case OP_XOR:
-			this->xor(dpinfo, reg, stack);
-			break;
+			return this->xor(dpinfo, reg, stack);
 		case OP_JMP:
-			this->jmp(dpinfo, reg, stack);
-			break;
+			return this->jmp(dpinfo, reg, stack);
 		case OP_JE:
-			this->je(dpinfo, reg, stack);
-			break;
+			return this->je(dpinfo, reg, stack);
 		case OP_JNE:
-			this->jne(dpinfo, reg, stack);
-			break;
+			return this->jne(dpinfo, reg, stack);
 		case OP_JA:
-			this->ja(dpinfo, reg, stack);
-			break;
+			return this->ja(dpinfo, reg, stack);
 		case OP_JB:
-			this->jb(dpinfo, reg, stack);
-			break;
+			return this->jb(dpinfo, reg, stack);
 		case OP_JL:
-			this->jl(dpinfo, reg, stack);
-			break;
+			return this->jl(dpinfo, reg, stack);
 		case OP_JLE:
-			this->jle(dpinfo, reg, stack);
-			break;
+			return this->jle(dpinfo, reg, stack);
 		case OP_JZ:
-			this->jz(dpinfo, reg, stack);
-			break;
+			return this->jz(dpinfo, reg, stack);
 		case OP_CMP:
-			this->cmp(dpinfo, reg, stack);
-			break;
+			return this->cmp(dpinfo, reg, stack);
 		case OP_TEST:
-			this->test(dpinfo, reg, stack);
-			break;
+			return this->test(dpinfo, reg, stack);
 		case OP_EXIT:
-			this->exit(dpinfo, reg, stack);
-			break;
+			return this->exit(dpinfo, reg, stack);
 		case OP_SYSCALL:
-			this->syscall(dpinfo, reg, stack);
-			break;
+			return this->syscall(dpinfo, reg, stack);
 		case OP_ADD_EXCEPT:
-			this->add_except(dpinfo, reg, stack);
-			break;
+			return this->add_except(dpinfo, reg, stack);
 		case OP_DEL_EXCEPT:
-			this->del_except(dpinfo, reg, stack);
-			break;
+			return this->del_except(dpinfo, reg, stack);
 		case OP_EXCEPT_CALL:
-			this->call_except(dpinfo, reg, stack);
-			break;
+			return this->call_except(dpinfo, reg, stack);
 		default:
 			throw "Illegal Instruction";
 		}

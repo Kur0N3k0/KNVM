@@ -6,10 +6,10 @@ namespace KNVM {
 		
 		std::memcpy(header.signature, ".KNF", 4);
 		file.write((char *)&header, sizeof(header));
-		file.seekp(OFFSET_CODE);
+		//file.seekp((size_t)header.codeoffset);
 
 		file.write((char *)code.get(), code.getCodeSize());
-		file.seekp(OFFSET_DATA);
+		file.seekp(header.codesize, std::ios::cur);
 
 		file.write((char *)data.get(), data.getDataSize());
 

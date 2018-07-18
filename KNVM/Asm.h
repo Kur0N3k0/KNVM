@@ -3,6 +3,7 @@
 #include "Optable.h"
 
 #include <string>
+#include <Windows.h>
 
 namespace KNVM {
 	class Memory;
@@ -12,13 +13,25 @@ namespace KNVM {
 	protected:
 		void setOptype(BYTE *op, BYTE type) { op[0] = op[0] | (type << 6); }
 		void setOp(BYTE *op, BYTE oper) { op[0] = op[0] | (oper & 0b00111111); }
-		void setLReg(BYTE *op, BYTE reg) { op[1] = reg; }
-		void setRReg(BYTE *op, BYTE reg) { op[2] = reg; }
-		void setVal(BYTE *op, DWORD val) {
-			if (is_imm2)
-				*(DWORD *)&op[2] = val;
+		void setLReg(BYTE *op, BYTE reg, bool indirect = false) { 
+			if (indirect)
+				op[0] = (OP_TYPE_PTR_REG << 6) | reg;
 			else
-				*(DWORD *)&op[1] = val;
+				op[0] = (OP_TYPE_REG << 6) | reg;
+		}
+		void setRReg(BYTE *op, BYTE reg, bool indirect = false) { 
+			if (indirect)
+				op[0] = (OP_TYPE_PTR_REG << 6) | reg;
+			else
+				op[0] = (OP_TYPE_REG << 6) | reg;
+		}
+		void setVal(BYTE *op, DWORD val, bool indirect = false) {
+			if (indirect)
+				op[0] = (OP_TYPE_PTR_IMM << 6);
+			else
+				op[0] = (OP_TYPE_IMM << 6);
+				
+			*(DWORD *)&op[1] = val;
 		}
 		BYTE getRegByte(DWORD idx) { return (BYTE)(0b00000001 << (idx - 1)); }
 		BYTE getRegIdx(std::string &reg) {
@@ -31,8 +44,7 @@ namespace KNVM {
 
 		std::string reg[10] = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", "flags" };
 
-		bool is_imm2 = false;
-		BYTE code[6] = { 0, };
+		BYTE code[10] = { 0, };
 		BYTE codesize;
 
 	public:
@@ -41,40 +53,58 @@ namespace KNVM {
 		// Asm(OP_PUSH, 1234);
 		// Asm(OP_PUSH, "eax");
 		// Asm(OP_RET);
-		Asm(BYTE op, std::string reg, DWORD imm) : is_imm2(true) {
-			if(reg[0] == '[' && reg[reg.length() - 1] == ']')
-				setOptype(code, OP_TYPE_IMM);
-			else
-				setOptype(code, OP_TYPE_IMM2);
+		Asm(BYTE op, std::string reg, DWORD imm) {
+			bool indirect = false;
+			if (reg[0] == '[' && reg[reg.length() - 1] == ']') {
+				reg = reg.substr(1, reg.length() - 2);
+				indirect = true;
+			}
+
+			setOptype(code, 2);
 			setOp(code, op);
-			setLReg(code, getRegByte(getRegIdx(reg)));
-			setVal(code, imm);
-			codesize = 6;
+			setLReg(code + 1, getRegByte(getRegIdx(reg)), indirect);
+			setVal(code + 2, imm);
+			codesize = 7;
 		}
 		Asm(BYTE op, std::string lreg, std::string rreg) {
-			if (lreg[0] == '[' && lreg[lreg.length() - 1] == ']')
-				setOptype(code, OP_TYPE_REG);
-			else
-				setOptype(code, OP_TYPE_REG2);
+			bool indirect = false;
+			if (lreg[0] == '[' && lreg[lreg.length() - 1] == ']') {
+				lreg = lreg.substr(1, lreg.length() - 2);
+				indirect = true;
+			}
+
+			bool indirect2 = false;
+			if (rreg[0] == '[' && rreg[rreg.length() - 1] == ']') {
+				rreg = rreg.substr(1, rreg.length() - 2);
+				indirect2 = true;
+			}
+
+			setOptype(code, 2);
 			setOp(code, op);
-			setLReg(code, getRegByte(getRegIdx(lreg)));
-			setRReg(code, getRegByte(getRegIdx(rreg)));
+			setLReg(code + 1, getRegByte(getRegIdx(lreg)), indirect);
+			setRReg(code + 2, getRegByte(getRegIdx(rreg)), indirect2);
 			codesize = 3;
 		}
-		Asm(BYTE op, DWORD val) : is_imm2(false) {
-			setOptype(code, OP_TYPE_IMM);
+		Asm(BYTE op, DWORD val) {
+			setOptype(code, 1);
 			setOp(code, op);
-			setVal(code, val);
-			codesize = 5;
+			setVal(code + 1, val);
+			codesize = 6;
 		}
 		Asm(BYTE op, std::string lreg) {
-			setOptype(code, OP_TYPE_REG);
+			bool indirect = false;
+			if (lreg[0] == '[' && lreg[lreg.length() - 1] == ']') {
+				lreg = lreg.substr(1, lreg.length() - 2);
+				indirect = true;
+			}
+
+			setOptype(code, 1);
 			setOp(code, op);
-			setLReg(code, getRegByte(getRegIdx(lreg)));
+			setLReg(code + 1, getRegByte(getRegIdx(lreg)), indirect);
 			codesize = 2;
 		}
 		Asm(BYTE op) {
-			setOptype(code, OP_TYPE_REG);
+			setOptype(code, 1);
 			setOp(code, op);
 			codesize = 1;
 		}
@@ -86,5 +116,6 @@ namespace KNVM {
 		
 		friend class Memory;
 		friend class Function;
+		friend class Label;
 	};
 }

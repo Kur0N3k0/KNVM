@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Operand.h"
 #include "Memory.h"
 #include "FuncException.h"
 
@@ -13,6 +14,7 @@ namespace KNVM {
 		BYTE opcode;
 		BYTE opcode_type;
 		BYTE *opcodes;
+		Operand *operand[2];
 		DWORD opcode_size;
 
 		DispatchInfo() : opcodes(nullptr) { }

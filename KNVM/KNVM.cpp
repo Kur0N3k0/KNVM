@@ -32,7 +32,7 @@ namespace KNVM {
 		if (knf.bits == KNF::KFN_X64)
 			return false;
 
-		if (OFFSET_DATA - knf.codesize > OFFSET_DATA)
+		if (knf.dataoffset - knf.codesize > knf.dataoffset)
 			return false;
 
 		if (OFFSET_STACK - knf.datasize > OFFSET_STACK)
@@ -51,11 +51,11 @@ namespace KNVM {
 		memory->setDataSize(knf.datasize);
 
 		BYTE *ptr = (BYTE *)baseaddr + OFFSET_CODE;
-		void *code = &buffer[OFFSET_CODE];
+		void *code = &buffer[knf.codeoffset];
 		std::memcpy(ptr, code, knf.codesize);
 
 		ptr = (BYTE *)baseaddr + OFFSET_DATA;
-		void *data = &buffer[OFFSET_DATA];
+		void *data = &buffer[knf.dataoffset];
 		std::memcpy(ptr, data, knf.datasize);
 
 		file.close();

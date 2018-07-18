@@ -86,4 +86,10 @@ namespace KNVM {
 		funcmap.insert(std::pair<std::string, Function>(funcname, func));
 		return *this;
 	}
+	Memory &_Public Memory::operator+=(char *ptr) {
+		datasize += snprintf((char *)address + datasize, size, "%s", ptr);
+		*((char *)address + datasize) = 0x00;
+		datasize++;
+		return *this;
+	}
 }

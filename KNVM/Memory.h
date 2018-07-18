@@ -27,6 +27,7 @@ namespace KNVM {
 		std::unordered_map<std::string, Function> funcmap;
 
 	public:
+		Memory() { }
 		Memory(void *addr, DWORD size) : address(addr), baseaddr(addr), size(size) { this->is_sub = true; }
 		Memory(DWORD size, DWORD protect, DWORD align) : codesize(0), size(size), protect(protect), align(align) {
 			address = VirtualAlloc(NULL, size, MEM_COMMIT, protect);
@@ -57,5 +58,6 @@ namespace KNVM {
 		void *operator-=(DWORD p);
 		Memory &operator+=(Asm asmbly);
 		Memory &operator+=(Function &func);
+		Memory &operator+=(char *ptr);
 	};
 }
