@@ -895,19 +895,19 @@ namespace KNVM {
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 
@@ -918,27 +918,31 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (!getZF(reg)) 
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (!getZF(reg))
+				return typesize + opreg->getSize();
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (!getZF(reg))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 
@@ -949,27 +953,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (getZF(reg))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if(getZF(reg))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get() + opreg->getSize();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get() + opreg->getSize();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (getZF(reg))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value + opreg->getSize() + 1;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 
@@ -980,27 +989,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (!(!getCF(reg) && !getZF(reg)))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (!(!getCF(reg) && !getZF(reg)))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (!(!getCF(reg) && !getZF(reg)))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 		else {
@@ -1014,27 +1028,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (!getCF(reg))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (!getCF(reg))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (!getCF(reg))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 		else {
@@ -1048,27 +1067,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (getNF(reg) == getOF(reg))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (getNF(reg) == getOF(reg))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (getNF(reg) == getOF(reg))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 		else {
@@ -1082,27 +1106,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (!(getZF(reg) || getNF(reg) != getOF(reg)))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (!(getZF(reg) || getNF(reg) != getOF(reg)))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (!(getZF(reg) || getNF(reg) != getOF(reg)))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 		else {
@@ -1116,27 +1145,32 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		if (!getZF(reg))
-			return 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
+			if (!getZF(reg))
+				return typesize + opreg->getSize();
+
 			auto &lreg = reg[bytes[0]];
 
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)lreg.get();
+				reg["eip"] += *(DWORD *)lreg.get();
 			}
 			else {
-				reg["eip"] = lreg.get();
+				reg["eip"] += lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+			if (!getZF(reg))
+				return typesize + opreg->getSize();
+
 			DWORD value = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
-				reg["eip"] = *(DWORD *)value;
+				reg["eip"] += *(DWORD *)value;
 			}
 			else {
-				reg["eip"] = value;
+				reg["eip"] += value;
 			}
 		}
 		else {

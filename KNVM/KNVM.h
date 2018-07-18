@@ -19,7 +19,7 @@
 
 namespace KNVM {
 	static auto label = [=](Function &fn1, Function &fn2) -> DWORD {
-		return fn2.getSize() - fn1.getSize() - 6 - 4;
+		return fn2.getSize() - fn1.getSize();
 	};
 
 	class KNVM {

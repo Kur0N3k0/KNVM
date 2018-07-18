@@ -110,7 +110,7 @@ namespace KNVM {
 		}
 
 		Asm(const Asm &asmbly){
-			std::memcpy(code, asmbly.code, 6);
+			std::memcpy(code, asmbly.code, asmbly.codesize);
 			codesize = asmbly.codesize;
 		}
 		

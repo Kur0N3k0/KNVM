@@ -12,7 +12,7 @@ int main() {
 
 	data += "Input>> ";
 	data += "\x0a\x34\x33\x2e\x0f\x24\x2a\x2e"; //0xa34332e0f242a2e
-	data += "Woah....";
+	data += "Woah...\n";
 	data += "Nonono!!";
 
 	Function fn1 = "fn";
@@ -21,6 +21,7 @@ int main() {
 	fn1 += Asm(OP_MOV, "eax", INT_WRITE);
 	fn1 += Asm(OP_MOV, "ebx", 1);
 	fn1 += Asm(OP_MOV, "ecx", "esi");
+	fn1 += Asm(OP_ADD, "ecx", 0x09 * 3);
 	fn1 += Asm(OP_MOV, "edx", 100);
 	fn1 += Asm(OP_SYSCALL);
 	fn1 += Asm(OP_MOV, "eax", INT_EXIT);
@@ -44,8 +45,27 @@ int main() {
 	fn1 += Asm(OP_MOV, "edx", 9);
 	fn1 += Asm(OP_SYSCALL);
 
+	fn1 += Asm(OP_MOV, "eax", "[ecx]");
+	fn1 += Asm(OP_XOR, "eax", 0x41414141);
+	fn1 += Asm(OP_ADD, "ecx", 0x04);
+	fn1 += Asm(OP_MOV, "ebx", "[ecx]");
+	fn1 += Asm(OP_XOR, "ebx", 0x41414141);
+
+	fn1 += Asm(OP_MOV, "edi", "esi");
+	fn1 += Asm(OP_ADD, "edi", 0x09);
+	fn1 += Asm(OP_MOV, "ecx", "[edi]");
+	fn1 += Asm(OP_ADD, "edi", 0x04);
+	fn1 += Asm(OP_MOV, "edx", "[edi]");
+
+	fn1 += Asm(OP_CMP, "eax", "ecx");
+	fn1 += Asm(OP_JNE, label(fn1, fn1cpy));
+	fn1 += Asm(OP_CMP, "ebx", "edx");
+	fn1 += Asm(OP_JNE, label(fn1, fn1cpy));
+
 	fn1 += Asm(OP_MOV, "eax", INT_WRITE);
 	fn1 += Asm(OP_MOV, "ebx", 1);
+	fn1 += Asm(OP_ADD, "esi", 0x09 * 2); // Woah...
+	fn1 += Asm(OP_MOV, "ecx", "esi");
 	fn1 += Asm(OP_MOV, "edx", 100);
 	fn1 += Asm(OP_SYSCALL);
 

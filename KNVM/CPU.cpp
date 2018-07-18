@@ -142,11 +142,11 @@ namespace KNVM {
 			break;
 		case OP_TYPE_PTR_REG:
 			opsize = 1;
-			dpinfo->operand[0] = new Operand(optype, &reg, 1, true);
+			dpinfo->operand[0] = new Operand(OP_TYPE_REG, &reg, 1, true);
 			break;
 		case OP_TYPE_PTR_IMM:
 			opsize = 4;
-			dpinfo->operand[0] = new Operand(optype, &addr[2], 4, true);
+			dpinfo->operand[0] = new Operand(OP_TYPE_IMM, &addr[2], 4, true);
 			break;
 		}
 
@@ -166,11 +166,11 @@ namespace KNVM {
 				opsize += 4;
 				break;
 			case OP_TYPE_PTR_REG:
-				dpinfo->operand[1] = new Operand(optype, &reg, true);
+				dpinfo->operand[1] = new Operand(OP_TYPE_REG, &reg, 1, true);
 				opsize += 1;
 				break;
 			case OP_TYPE_PTR_IMM:
-				dpinfo->operand[1] = new Operand(optype, &addr[2 + opsize + 1], 4, true);
+				dpinfo->operand[1] = new Operand(OP_TYPE_IMM, &addr[1 + opsize], 4, true);
 				opsize += 4;
 				break;
 			}
