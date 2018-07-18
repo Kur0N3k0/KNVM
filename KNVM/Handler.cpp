@@ -13,6 +13,8 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 
+		DWORD typesize = 1;
+
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
 
@@ -34,6 +36,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() = ptr;
 					}
+					typesize++;
 				}
 			}
 			else {
@@ -54,10 +57,13 @@ namespace KNVM {
 					else {
 						lreg = ptr;
 					}
+					typesize++;
 				}
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -77,6 +83,7 @@ namespace KNVM {
 					else {
 						*lptr = ptr;
 					}
+					typesize++;
 				}
 			}
 			else {
@@ -84,7 +91,7 @@ namespace KNVM {
 			}
 		}
 
-		return 1 + opreg->getSize() + 1 +opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::push(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -93,6 +100,7 @@ namespace KNVM {
 		DWORD type = opreg->getType();
 
 		DWORD sbase = (DWORD)stack.get();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -132,10 +140,11 @@ namespace KNVM {
 				reg["esp"] -= stack.getAlign();
 				DWORD *ptr = *reg["esp"];
 				*ptr = *(DWORD *)bytes;
+				typesize++;
 			}
 		}
 
-		return 1 + opreg->getSize();
+		return typesize + opreg->getSize();
 	}
 	DWORD _Private Handler::pop(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -144,6 +153,7 @@ namespace KNVM {
 		DWORD type = opreg->getType();
 
 		DWORD sbase = (DWORD)stack.get();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -166,7 +176,7 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 
-		return 1 + opreg->getSize();
+		return typesize + opreg->getSize();
 	}
 	DWORD _Private Handler::ret(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		DWORD sbase = (DWORD)stack.get();
@@ -177,7 +187,7 @@ namespace KNVM {
 		DWORD *ptr = *reg["esp"];
 		reg["eip"] = *ptr;
 		reg["esp"] += stack.getAlign();
-		return 1;
+		return 0;
 	}
 
 	DWORD _Private Handler::add(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
@@ -190,6 +200,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD prev_value, value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -213,6 +224,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() += ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -235,11 +247,14 @@ namespace KNVM {
 					else {
 						lreg += ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				prev_value = *lptr;
@@ -260,6 +275,7 @@ namespace KNVM {
 					else {
 						*lptr += ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -275,7 +291,7 @@ namespace KNVM {
 			setOF(reg);
 		}
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::sub(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -287,6 +303,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD prev_value, value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -310,6 +327,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() -= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -332,11 +350,14 @@ namespace KNVM {
 					else {
 						lreg -= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				prev_value = *lptr;
@@ -357,6 +378,7 @@ namespace KNVM {
 					else {
 						*lptr -= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -372,7 +394,7 @@ namespace KNVM {
 			setOF(reg);
 		}
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::mul(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -384,6 +406,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD prev_value, value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -407,6 +430,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() *= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -429,11 +453,14 @@ namespace KNVM {
 					else {
 						lreg *= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				prev_value = *lptr;
@@ -454,6 +481,7 @@ namespace KNVM {
 					else {
 						*lptr *= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -469,7 +497,7 @@ namespace KNVM {
 			setOF(reg);
 		}
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::div(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -481,6 +509,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -503,6 +532,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() /= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -524,11 +554,14 @@ namespace KNVM {
 					else {
 						lreg /= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -548,6 +581,7 @@ namespace KNVM {
 					else {
 						*lptr /= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -559,7 +593,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 
 	DWORD _Private Handler::and(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
@@ -572,6 +606,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -594,6 +629,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() &= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -615,11 +651,14 @@ namespace KNVM {
 					else {
 						lreg &= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -639,6 +678,7 @@ namespace KNVM {
 					else {
 						*lptr &= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -650,7 +690,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::or(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -662,6 +702,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -684,6 +725,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() |= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -705,11 +747,14 @@ namespace KNVM {
 					else {
 						lreg |= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -729,6 +774,7 @@ namespace KNVM {
 					else {
 						*lptr |= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -740,7 +786,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::xor(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -752,6 +798,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -774,6 +821,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() ^= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -795,11 +843,14 @@ namespace KNVM {
 					else {
 						lreg ^= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -819,6 +870,7 @@ namespace KNVM {
 					else {
 						*lptr ^= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -830,7 +882,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 
 	DWORD _Private Handler::jmp(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
@@ -1103,6 +1155,7 @@ namespace KNVM {
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -1122,18 +1175,20 @@ namespace KNVM {
 			else {
 				fnExp.add_except((void *)func);
 			}
+			typesize++;
 		}
 		else {
 			throw "Unknown Operand Type";
 		}
 
-		return 1 + opreg->getSize();
+		return typesize + opreg->getSize();
 	}
 	DWORD _Private Handler::del_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -1153,20 +1208,20 @@ namespace KNVM {
 			else {
 				fnExp.del_except((void *)func);
 			}
+			typesize++;
 		}
 		else {
 			throw "Unknown Operand Type";
 		}
 
-		return 1 + opreg->getSize();
+		return typesize + opreg->getSize();
 	}
 	DWORD _Private Handler::call_except(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
 
 		BYTE *bytes = opreg->getBytes();
 		DWORD type = opreg->getType();
-
-		DWORD retaddr = reg["eip"] + 1 + opreg->getSize();
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -1185,6 +1240,7 @@ namespace KNVM {
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
 			DWORD func = *(DWORD *)bytes;
 			if (opreg->is_indirect()) {
 				if (!fnExp.is_func((void *)(*(DWORD *)func)))
@@ -1203,6 +1259,7 @@ namespace KNVM {
 			throw "Unknown Operand Type";
 		}
 
+		DWORD retaddr = reg["eip"] + typesize + opreg->getSize();
 		reg["esp"] -= stack.getAlign();
 		*(DWORD *)reg["esp"].get() = retaddr;
 
@@ -1219,6 +1276,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD prev_value, value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -1242,6 +1300,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() -= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -1264,11 +1323,14 @@ namespace KNVM {
 					else {
 						lreg -= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				prev_value = *lptr;
@@ -1289,6 +1351,7 @@ namespace KNVM {
 					else {
 						*lptr -= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -1304,7 +1367,7 @@ namespace KNVM {
 			setOF(reg);
 		}
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 	DWORD _Private Handler::test(DispatchInfo *dpinfo, RegisterList<> &reg, Memory &stack) {
 		auto &opreg = dpinfo->operand[0];
@@ -1316,6 +1379,7 @@ namespace KNVM {
 		BYTE *bytes2 = opreg2->getBytes();
 		DWORD type2 = opreg2->getType();
 		DWORD value;
+		DWORD typesize = 1;
 
 		if (type == OP_TYPE_REG) {
 			auto &lreg = reg[bytes[0]];
@@ -1338,6 +1402,7 @@ namespace KNVM {
 					else {
 						*(DWORD *)lreg.get() &= ptr;
 					}
+					typesize++;
 				}
 				value = *(DWORD *)lreg.get();
 			}
@@ -1359,11 +1424,14 @@ namespace KNVM {
 					else {
 						lreg &= ptr;
 					}
+					typesize++;
 				}
 				value = lreg.get();
 			}
 		}
 		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
 			if (opreg->is_indirect()) {
 				DWORD *lptr = (DWORD *)opreg->getBytes();
 				if (type2 == OP_TYPE_REG) {
@@ -1383,6 +1451,7 @@ namespace KNVM {
 					else {
 						*lptr &= ptr;
 					}
+					typesize++;
 				}
 				value = *lptr;
 			}
@@ -1394,7 +1463,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 
-		return 1 + opreg->getSize() + 1 + opreg2->getSize();
+		return typesize + opreg->getSize() + opreg2->getSize();
 	}
 
 	/*
@@ -1448,7 +1517,7 @@ namespace KNVM {
 		case OP_MUL:
 			return this->mul(dpinfo, reg, stack);
 		case OP_DIV:
-			return this->mul(dpinfo, reg, stack);
+			return this->div(dpinfo, reg, stack);
 		case OP_AND:
 			return this->and(dpinfo, reg, stack);
 		case OP_OR:

@@ -20,6 +20,8 @@ namespace KNVM {
 	}
 
 	void _Public CPU::execute(Memory &code, Memory &stack) {
+		reg["eax"] = (DWORD)code.get();
+		reg["ebx"] = (DWORD)code.get() - OFFSET_CODE + OFFSET_DATA;
 		reg["eip"] = (DWORD)code.get();
 		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
 		reg["ebp"] = reg["esp"];
@@ -49,9 +51,10 @@ namespace KNVM {
 		}
 	}
 	void _Public CPU::execute(Memory &code, void *entrypoint, Memory &stack) {
+		reg["eax"] = (DWORD)code.get();
+		reg["ebx"] = (DWORD)code.get() - OFFSET_CODE + OFFSET_DATA;
 		reg["eip"] = (DWORD)code.get() + (DWORD)entrypoint;
 		reg["esp"] = (DWORD)stack.get() + stack.getSize() - 4;
-		reg["ebp"] = reg["esp"];
 
 		while (true) {
 			try {
@@ -64,7 +67,7 @@ namespace KNVM {
 					throw "Dispatch Fail";
 
 				DWORD handled_size = handler.handle(dpinfo, reg, stack);
-				if (handled_size == 0)
+				if (handled_size == -1)
 					throw "Handling Fail";
 
 				reg["eip"] += handled_size;

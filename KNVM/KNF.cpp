@@ -9,8 +9,6 @@ namespace KNVM {
 		//file.seekp((size_t)header.codeoffset);
 
 		file.write((char *)code.get(), code.getCodeSize());
-		file.seekp(header.codesize, std::ios::cur);
-
 		file.write((char *)data.get(), data.getDataSize());
 
 		file.close();
