@@ -2,6 +2,7 @@
 
 #include "CPU.h"
 #include "Memory.h"
+#include "types.h"
 
 #include <string>
 #include <sstream>
@@ -10,40 +11,43 @@
 namespace KNVM {
 	class Disassembler {
 	private:
-		std::string mov(DispatchInfo *dpinfo);
-		std::string push(DispatchInfo *dpinfo);
-		std::string pop(DispatchInfo *dpinfo);
-		std::string ret(DispatchInfo *dpinfo);
+		DisassembleInfo mov(DispatchInfo *dpinfo);
+		DisassembleInfo push(DispatchInfo *dpinfo);
+		DisassembleInfo pop(DispatchInfo *dpinfo);
+		DisassembleInfo ret(DispatchInfo *dpinfo);
 
-		std::string add(DispatchInfo *dpinfo);
-		std::string sub(DispatchInfo *dpinfo);
-		std::string mul(DispatchInfo *dpinfo);
-		std::string div(DispatchInfo *dpinfo);
+		DisassembleInfo add(DispatchInfo *dpinfo);
+		DisassembleInfo sub(DispatchInfo *dpinfo);
+		DisassembleInfo mul(DispatchInfo *dpinfo);
+		DisassembleInfo div(DispatchInfo *dpinfo);
 
-		std::string and(DispatchInfo *dpinfo);
-		std::string or (DispatchInfo *dpinfo);
-		std::string xor(DispatchInfo *dpinfo);
+		DisassembleInfo and (DispatchInfo *dpinfo);
+		DisassembleInfo or (DispatchInfo *dpinfo);
+		DisassembleInfo xor (DispatchInfo *dpinfo);
 
-		std::string jmp(DispatchInfo *dpinfo);
-		std::string je(DispatchInfo *dpinfo);
-		std::string jne(DispatchInfo *dpinfo);
-		std::string ja(DispatchInfo *dpinfo);
-		std::string jb(DispatchInfo *dpinfo);
-		std::string jl(DispatchInfo *dpinfo);
-		std::string jle(DispatchInfo *dpinfo);
-		std::string jz(DispatchInfo *dpinfo);
+		DisassembleInfo jmp(DispatchInfo *dpinfo);
+		DisassembleInfo je(DispatchInfo *dpinfo);
+		DisassembleInfo jne(DispatchInfo *dpinfo);
+		DisassembleInfo ja(DispatchInfo *dpinfo);
+		DisassembleInfo jb(DispatchInfo *dpinfo);
+		DisassembleInfo jl(DispatchInfo *dpinfo);
+		DisassembleInfo jle(DispatchInfo *dpinfo);
+		DisassembleInfo jz(DispatchInfo *dpinfo);
 
-		std::string cmp(DispatchInfo *dpinfo);
-		std::string test(DispatchInfo *dpinfo);
+		DisassembleInfo cmp(DispatchInfo *dpinfo);
+		DisassembleInfo test(DispatchInfo *dpinfo);
 
-		std::string exit(DispatchInfo *dpinfo);
+		DisassembleInfo exit(DispatchInfo *dpinfo);
 
 	private:
 		FuncException fnExp;
 
-		std::string add_except(DispatchInfo *dpinfo);
-		std::string del_except(DispatchInfo *dpinfo);
-		std::string call_except(DispatchInfo *dpinfo);
+		DisassembleInfo add_except(DispatchInfo *dpinfo);
+		DisassembleInfo del_except(DispatchInfo *dpinfo);
+		DisassembleInfo call_except(DispatchInfo *dpinfo);
+
+	private:
+		DisassembleInfo syscall(DispatchInfo *dpinfo);
 
 	private:
 		std::string hex(DWORD value) {

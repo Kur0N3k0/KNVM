@@ -10,6 +10,7 @@ namespace KNVM {
 #define _Private
 #define _Public
 
+#pragma pack(push, 1)
 	typedef struct DispatchInfo {
 		BYTE opcode;
 		BYTE opcode_type;
@@ -20,6 +21,11 @@ namespace KNVM {
 		DispatchInfo() : opcodes(nullptr) { }
 		~DispatchInfo() { if (opcodes != nullptr) delete opcodes; }
 	} DispatchInfo;
+
+	typedef struct DisassembleInfo {
+		std::string asmbly;
+		DWORD handlesize;
+	} DisassembleInfo;
 
 	typedef struct Context {
 		DWORD eax;
@@ -40,6 +46,7 @@ namespace KNVM {
 		Context context;
 		ThreadInfoBlock *next;
 	} ThreadInfoBlock;
+#pragma pack(pop)
 
 	static ThreadInfoBlock tib = { 0, };
 }

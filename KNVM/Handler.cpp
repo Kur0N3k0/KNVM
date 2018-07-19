@@ -130,7 +130,7 @@ namespace KNVM {
 
 				reg["esp"] -= stack.getAlign();
 				DWORD *ptr = *reg["esp"];
-				DWORD val = *(DWORD *)bytes;
+				DWORD val = **(DWORD **)bytes;
 				*ptr = *(DWORD *)val;
 			}
 			else {

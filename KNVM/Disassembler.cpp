@@ -1,500 +1,1398 @@
 #include "Disassembler.h"
-//#include "Register.h"
-//#include "Optable.h"
-//#include "types.h"
 
 #include <string>
 #include <iostream>
 
 namespace KNVM {
-	std::string Disassembler::mov(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::mov(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "mov ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "mov ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
-		}
-		else {
-			throw "Unknown Operand Type";
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
 
-		return asmbly;
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::push(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::push(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto lval = &op[0];
-		std::string asmbly = "push ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			asmbly += join(hex(*(DWORD *)lval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "push ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			asmbly += join(reg[*lval].getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::pop(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::pop(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto lval = &op[0];
-		std::string asmbly = "pop ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_REG) {
-			asmbly += join(reg[*lval].getName());
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "pop ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				throw "Unknown Operand Type";
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else {
+		else if (type == OP_TYPE_IMM) {
 			throw "Unknown Operand Type";
 		}
-		return asmbly;
-	}
-	std::string Disassembler::ret(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
 
-		if (optype == OP_TYPE_REG) {
-			auto &eip = cpu.getRegister()["eip"];
-			eip -= 1;
-			return "ret\n";
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::add(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::ret(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "add ";
-
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
-		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+		DisassembleInfo di = { "ret\n", 0 };
+		return di;
 	}
-	std::string Disassembler::sub(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::add(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "sub ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "add ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::mul(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::sub(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "mul ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "sub ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::div(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::mul(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "div ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "mul ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-
-	std::string Disassembler:: and (DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::div(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "and ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "div ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler:: or (DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+
+	DisassembleInfo Disassembler::and(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "or ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "and ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler:: xor (DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::or(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		auto &lreg = reg[op[0]];
-		auto rval = &op[1];
-		std::string asmbly = "xor ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			asmbly += join(lreg.getName(), hex(*(DWORD *)rval));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "or ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::jmp(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::xor(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jmp ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "xor ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::je(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::jmp(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "je ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "jmp ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::jne(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::je(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jne ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "je ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::ja(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::jne(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "ja ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "jne ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::jb(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::ja(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jb ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "ja ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::jl(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::jb(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jl ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "jb ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::jle(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::jl(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jle ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "push ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::jz(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::jle(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "jz ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD offset = *(DWORD *)&op[0];
-			asmbly += join("$+" + hex(offset + opsize));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "jle ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-
-	std::string Disassembler::cmp(DispatchInfo *dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto rval = &op[1];
+	DisassembleInfo Disassembler::jz(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "cmp ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM2) {
-			DWORD val = *(DWORD *)rval;
-			asmbly += join(hex(val));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "jz ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
 	}
-	std::string Disassembler::test(DispatchInfo *dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto rval = &op[1];
+
+	DisassembleInfo Disassembler::cmp(DispatchInfo *dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "test ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM2) {
-			DWORD val = *(DWORD *)rval;
-			asmbly += join(hex(val));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "cmp ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG2) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName(), reg[*rval].getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-
-	std::string Disassembler::exit(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-
-		if (optype == OP_TYPE_REG) {
-			auto &eip = cpu.getRegister()["eip"];
-			eip -= 1;
-			return "exit\n";
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-	}
-	std::string Disassembler::add_except(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::test(DispatchInfo *dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "add.except ";
+		auto &opreg = dpinfo->operand[0];
+		auto &opreg2 = dpinfo->operand[1];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			asmbly += join(hex(*ptr));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		BYTE *bytes2 = opreg2->getBytes();
+		DWORD type2 = opreg2->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "test ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + lreg.getName() + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + lreg.getName() + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), rreg.getName());
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join(lreg.getName(), "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join(lreg.getName(), hex(ptr));
+					}
+					typesize++;
+				}
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			typesize++;
+
+			if (opreg->is_indirect()) {
+				DWORD **lptr = (DWORD **)opreg->getBytes();
+				if (type2 == OP_TYPE_REG) {
+					auto &rreg = reg[bytes2[0]];
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + rreg.getName() + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", rreg.getName());
+						**lptr = rreg.get();
+					}
+				}
+				else if (type2 == OP_TYPE_IMM) {
+					DWORD ptr = *(DWORD *)opreg2->getBytes();
+					if (opreg2->is_indirect()) {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", "[" + hex(ptr) + "]");
+					}
+					else {
+						di.asmbly += join("[" + hex((DWORD)*lptr) + "]", hex(ptr));
+					}
+					typesize++;
+				}
+			}
+			else {
+				throw "Unknown Operand Type";
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+
+		di.handlesize = typesize + opreg->getSize() + opreg2->getSize();
+
+		return di;
 	}
-	std::string Disassembler::del_except(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
-		auto &reg = cpu.getRegister();
-		std::string asmbly = "del.except ";
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			asmbly += join(hex(*ptr));
-		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
-		}
-		else {
-			throw "Unknown Operand Type";
-		}
-		return asmbly;
+	DisassembleInfo Disassembler::exit(DispatchInfo * dpinfo) {
+		DisassembleInfo di = { "ret", 1 };
+		return di;
 	}
-	std::string Disassembler::call_except(DispatchInfo * dpinfo) {
-		auto opsize = dpinfo->opcode_size;
-		auto optype = dpinfo->opcode_type;
-		auto op = dpinfo->opcodes;
+	DisassembleInfo Disassembler::add_except(DispatchInfo * dpinfo) {
 		auto &reg = cpu.getRegister();
-		std::string asmbly = "call.except ";
+		auto &opreg = dpinfo->operand[0];
 
-		if (optype == OP_TYPE_IMM) {
-			DWORD *ptr = (DWORD *)&op[0];
-			asmbly += join(hex(*ptr));
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "add.except ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		else if (optype == OP_TYPE_REG) {
-			auto &lreg = reg[op[0]];
-			asmbly += join(lreg.getName());
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
 		}
-		else {
-			throw "Unknown Operand Type";
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
+	}
+	DisassembleInfo Disassembler::del_except(DispatchInfo * dpinfo) {
+		auto &reg = cpu.getRegister();
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "del.except ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
 		}
-		return asmbly;
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
+		}
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
+	}
+	DisassembleInfo Disassembler::call_except(DispatchInfo * dpinfo) {
+		auto &reg = cpu.getRegister();
+		auto &opreg = dpinfo->operand[0];
+
+		BYTE *bytes = opreg->getBytes();
+		DWORD type = opreg->getType();
+
+		DWORD typesize = 1;
+		DisassembleInfo di = { "call.except ", 0 };
+
+		if (type == OP_TYPE_REG) {
+			auto &lreg = reg[bytes[0]];
+
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + lreg.getName() + "]");
+			}
+			else {
+				di.asmbly += join(lreg.getName());
+			}
+		}
+		else if (type == OP_TYPE_IMM) {
+			if (opreg->is_indirect()) {
+				di.asmbly += join("[" + hex(*(DWORD *)bytes) + "]");
+			}
+			else {
+				di.asmbly += join(hex(*(DWORD *)bytes));
+				typesize++;
+			}
+		}
+
+		di.handlesize = typesize + opreg->getSize();
+		return di;
+	}
+
+	DisassembleInfo Disassembler::syscall(DispatchInfo *dpinfo) {
+		DisassembleInfo di = { "syscall\n", 1 };
+		return di;
 	}
 
 	std::string Disassembler::disassemble() {
@@ -508,92 +1406,99 @@ namespace KNVM {
 				if (dpinfo == nullptr)
 					throw "Dispatchinfo is null";
 
-				reg["eip"] += dpinfo->opcode_size;
-				if (dpinfo == nullptr || reg["eip"] > (DWORD)code.get() + code.getCodeSize() + 6)
-					throw "Dispatch Fail";
+				if (reg["eip"] > (DWORD)code.get() + code.getCodeSize())
+					throw "";
 				 
+				DisassembleInfo di;
+
 				switch (dpinfo->opcode) {
 				case OP_PUSH:
-					result += this->push(dpinfo);
+					di = this->push(dpinfo);
 					break;
 				case OP_POP:
-					result += this->pop(dpinfo);
+					di = this->pop(dpinfo);
 					break;
 				case OP_MOV:
-					result += this->mov(dpinfo);
+					di = this->mov(dpinfo);
 					break;
 				case OP_RET:
-					result += this->ret(dpinfo);
+					di = this->ret(dpinfo);
 					break;
 				case OP_ADD:
-					result += this->add(dpinfo);
+					di = this->add(dpinfo);
 					break;
 				case OP_SUB:
-					result += this->sub(dpinfo);
+					di = this->sub(dpinfo);
 					break;
 				case OP_MUL:
-					result += this->mul(dpinfo);
+					di = this->mul(dpinfo);
 					break;
 				case OP_DIV:
-					result += this->mul(dpinfo);
+					di = this->mul(dpinfo);
 					break;
 				case OP_AND:
-					result += this-> and (dpinfo);
+					di = this->and(dpinfo);
 					break;
 				case OP_OR:
-					result += this-> or (dpinfo);
+					di = this->or(dpinfo);
 					break;
 				case OP_XOR:
-					result += this-> xor (dpinfo);
+					di = this->xor(dpinfo);
 					break;
 				case OP_JMP:
-					result += this->jmp(dpinfo);
+					di = this->jmp(dpinfo);
 					break;
 				case OP_JE:
-					result += this->je(dpinfo);
+					di = this->je(dpinfo);
 					break;
 				case OP_JNE:
-					result += this->jne(dpinfo);
+					di = this->jne(dpinfo);
 					break;
 				case OP_JA:
-					result += this->ja(dpinfo);
+					di = this->ja(dpinfo);
 					break;
 				case OP_JB:
-					result += this->jb(dpinfo);
+					di = this->jb(dpinfo);
 					break;
 				case OP_JL:
-					result += this->jl(dpinfo);
+					di = this->jl(dpinfo);
 					break;
 				case OP_JLE:
-					result += this->jle(dpinfo);
+					di = this->jle(dpinfo);
 					break;
 				case OP_JZ:
-					result += this->jz(dpinfo);
+					di = this->jz(dpinfo);
 					break;
 				case OP_CMP:
-					result += this->cmp(dpinfo);
+					di = this->cmp(dpinfo);
 					break;
 				case OP_TEST:
-					result += this->test(dpinfo);
+					di = this->test(dpinfo);
 					break;
 				case OP_EXIT:
-					result += this->exit(dpinfo);
+					di = this->exit(dpinfo);
+					break;
+				case OP_SYSCALL:
+					di = this->syscall(dpinfo);
 					break;
 				case OP_ADD_EXCEPT:
-					result += this->add_except(dpinfo);
+					di = this->add_except(dpinfo);
 					break;
 				case OP_DEL_EXCEPT:
-					result += this->del_except(dpinfo);
+					di = this->del_except(dpinfo);
 					break;
 				case OP_EXCEPT_CALL:
-					result += this->call_except(dpinfo);
+					di = this->call_except(dpinfo);
 					break;
 				}
+
+				reg["eip"] += di.handlesize;
+				result += di.asmbly;
 
 				delete dpinfo;
 			}
 			catch (const char *err) {
-				std::cout << err << std::endl;
+				//std::cout << __FUNCTION__ << " -> " << err << std::endl;
 				break;
 			}
 			catch (std::exception exp) {

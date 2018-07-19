@@ -77,8 +77,8 @@ int main() {
 	code += Asm(OP_ADD_EXCEPT, (DWORD)fn1.getBase() + fn1cpy2.getSize());
 	code += Asm(OP_EXCEPT_CALL, (DWORD)fn1.getBase() + fn1cpy2.getSize());
 
-	//Disassembler disassembler(code);
-	//cout << disassembler.disassemble() << endl;
+	Disassembler disassembler(code);
+	cout << disassembler.disassemble() << endl;
 
 	::KNVM::KNVM knvm;
 	KNF knf;
