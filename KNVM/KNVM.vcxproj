@@ -121,7 +121,7 @@
   <ItemGroup>
     <ClInclude Include="CPU.h" />
     <ClInclude Include="Disassembler.h" />
-    <ClInclude Include="Emulator.h" />
+    <ClInclude Include="CodeGenerator.h" />
     <ClInclude Include="FuncException.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="Handler.h" />
@@ -139,6 +139,7 @@
     <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CodeGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Handler.cpp" />

@@ -126,27 +126,32 @@ namespace KNVM {
 		//dpinfo->opcode_size = opsize + 1;
 
 		// for register
-		// [ type 2bit ][ reg idx 6bit ]
+		// [ type 2bit ][ size 2 bit ][ reg idx 4bit ]
 		// for imm
-		// [ type 2bit ][   null 6bit  ][ imm 4byte ]
+		// [ type 2bit ][ size 2 bit ][  imm (size)byte   ]
+		// registers
+		// eax ax ah al
+		// imm
+		// 4 2 1
 		BYTE optype = (addr[1] & 0b11000000) >> 6;
-		BYTE reg = (addr[1] & 0b00111111);
+		BYTE opertype = (addr[1] & 0b00110000) >> 4;
+		BYTE reg = (addr[1] & 0b00001111);
 		switch(optype){
 		case OP_TYPE_REG:
 			opsize = 1;
-			dpinfo->operand[0] = new Operand(optype, &reg, 1);
+			dpinfo->operand[0] = new Operand(optype, &reg, 1, opertype);
 			break;
 		case OP_TYPE_IMM:
 			opsize = 4;
-			dpinfo->operand[0] = new Operand(optype, &addr[2], 4);
+			dpinfo->operand[0] = new Operand(optype, &addr[2], 4, opertype);
 			break;
 		case OP_TYPE_PTR_REG:
 			opsize = 1;
-			dpinfo->operand[0] = new Operand(OP_TYPE_REG, &reg, 1, true);
+			dpinfo->operand[0] = new Operand(OP_TYPE_REG, &reg, 1, opertype, true);
 			break;
 		case OP_TYPE_PTR_IMM:
 			opsize = 4;
-			dpinfo->operand[0] = new Operand(OP_TYPE_IMM, &addr[2], 4, true);
+			dpinfo->operand[0] = new Operand(OP_TYPE_IMM, &addr[2], 4, opertype, true);
 			break;
 		}
 
@@ -155,22 +160,23 @@ namespace KNVM {
 
 			BYTE sOptype = optype;
 			optype = (sOptype & 0b11000000) >> 6;
-			reg = (sOptype & 0b00111111);
+			opertype = (sOptype & 0b00110000) >> 4;
+			reg = (sOptype & 0b00001111);
 			switch (optype) {
 			case OP_TYPE_REG: 
-				dpinfo->operand[1] = new Operand(optype, &reg, 1);
+				dpinfo->operand[1] = new Operand(optype, &reg, 1, opertype);
 				opsize += 1;
 				break;
 			case OP_TYPE_IMM:
-				dpinfo->operand[1] = new Operand(optype, &addr[2 + opsize], 4);
+				dpinfo->operand[1] = new Operand(optype, &addr[2 + opsize], 4, opertype);
 				opsize += 4;
 				break;
 			case OP_TYPE_PTR_REG:
-				dpinfo->operand[1] = new Operand(OP_TYPE_REG, &reg, 1, true);
+				dpinfo->operand[1] = new Operand(OP_TYPE_REG, &reg, 1, opertype, true);
 				opsize += 1;
 				break;
 			case OP_TYPE_PTR_IMM:
-				dpinfo->operand[1] = new Operand(OP_TYPE_IMM, &addr[1 + opsize], 4, true);
+				dpinfo->operand[1] = new Operand(OP_TYPE_IMM, &addr[1 + opsize], 4, opertype, true);
 				opsize += 4;
 				break;
 			}

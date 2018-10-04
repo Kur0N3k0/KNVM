@@ -4,9 +4,13 @@ namespace KNVM {
 	// Static Variable Init
 	HINSTANCE UI::hUIinst = GetModuleHandle(NULL);
 	HWND UI::hShell = NULL;
+	HWND UI::hCmd = NULL;
+	WNDPROC UI::wCmdProc = NULL;
+	bool UI::shell = false;
 
 	namespace UIProc {
 		void keydown(HWND hwnd, WPARAM wParam, LPARAM lParam);
+		LRESULT setEditColor(HWND hwnd, HDC hdc);
 
 		typedef struct Cursor {
 			DWORD x;
@@ -28,7 +32,10 @@ namespace KNVM {
 			_In_ WPARAM wParam,
 			_In_ LPARAM lParam
 		) {
-			RECT rect;
+			static RECT rect;
+			HDC hdc;
+			PAINTSTRUCT ps;
+
 			switch (uMsg) {
 			case WM_CREATE:
 				GetClientRect(hwnd, &rect);
@@ -39,12 +46,18 @@ namespace KNVM {
 				GetClientRect(hwnd, &rect);
 				window.width = rect.right - rect.left;
 				window.height = rect.bottom - rect.top;
+				
+				MoveWindow(UI::gethCmd(), rect.top, rect.left, rect.right, rect.bottom, TRUE);
+				UpdateWindow(UI::gethCmd());
 				return 0;
 			case WM_PAINT:
+				
 				return 0;
 			case WM_KEYDOWN:
 				keydown(hwnd, wParam, lParam);
 				return 0;
+			case WM_CTLCOLOREDIT:
+				return setEditColor((HWND)lParam, (HDC)wParam);
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
@@ -115,10 +128,27 @@ namespace KNVM {
 					window.cursor.y -= window.cursor.fontsize;
 				break;
 			case VK_BACK:
+				if (window.cursor.x - window.cursor.fontsize * 2 < 0) {
+					window.cursor.x = 0;
+					window.cursor.y -= window.cursor.fontsize;
+				}
+				else {
+					window.cursor.x -= window.cursor.fontsize;
+				}
 				break;
 			case VK_RBUTTON:
 				break;
 			}
 		}
+		
+		LRESULT setEditColor(HWND hwnd, HDC hdc) {
+			if (hwnd == UI::gethCmd()) {
+				SetBkColor(hdc, RGB(0, 0, 0));
+				SetTextColor(hdc, RGB(255, 255, 255));
+				return (LRESULT)CreateSolidBrush(RGB(0, 0, 0));
+			}
+			return FALSE;
+		}
+
 	}
 }

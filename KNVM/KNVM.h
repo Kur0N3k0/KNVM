@@ -13,6 +13,7 @@
 #include "PipeLine.h"
 #include "CPU.h"
 #include "Disassembler.h"
+#include "CodeGenerator.h"
 #include "KNF.h"
 
 #include "UI.h"

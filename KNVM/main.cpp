@@ -78,7 +78,7 @@ int main() {
 	code += Asm(OP_EXCEPT_CALL, (DWORD)fn1.getBase() + fn1cpy2.getSize());
 
 	Disassembler disassembler(code);
-	cout << disassembler.disassemble() << endl;
+	//cout << disassembler.disassemble() << endl;
 
 	::KNVM::KNVM knvm;
 	KNF knf;
@@ -96,7 +96,9 @@ int main() {
 	knvm.ParseBinary("sample.knf");
 	knvm.Emulate();
 
-	UI ui;
+	//UI ui;
+
+	CodeGenerator codegen;
 
 	int i;
 	cin >> i;

@@ -25,7 +25,20 @@ namespace KNVM {
 						*(DWORD *)lreg.get() = *(DWORD *)rreg.get();
 					}
 					else {
-						*(DWORD *)lreg.get() = rreg.get();
+						switch (opreg2->getOperType()) {
+						case 0b11:
+							*(DWORD *)lreg.get() = rreg.get();
+							break;
+						case 0b10:
+							*(DWORD *)lreg.get() = (rreg.get() & 0xffff0000) >> 16;
+							break;
+						case 0b01:
+							*(DWORD *)lreg.get() = (rreg.get() & 0x0000ff00) >> 4;
+							break;
+						case 0b00:
+							*(DWORD *)lreg.get() = (rreg.get() & 0x000000ff);
+							break;
+						}
 					}
 				}
 				else if (type2 == OP_TYPE_IMM) {
@@ -34,7 +47,18 @@ namespace KNVM {
 						*(DWORD *)lreg.get() = *(DWORD *)ptr;
 					}
 					else {
-						*(DWORD *)lreg.get() = ptr;
+						switch (opreg2->getOperType()) {
+						case 0b11:
+						case 0b00:
+							*(DWORD *)lreg.get() = ptr;
+							break;
+						case 0b10:
+							*(DWORD *)lreg.get() = (ptr & 0xffff0000) >> 16;
+							break;
+						case 0b01:
+							*(DWORD *)lreg.get() = (ptr & 0x000000ff);
+							break;
+						}
 					}
 					typesize++;
 				}
@@ -46,6 +70,20 @@ namespace KNVM {
 						lreg = *(DWORD *)rreg.get();
 					}
 					else {
+						switch (opreg2->getOperType()) {
+						case 0b11:
+							lreg = rreg.get();
+							break;
+						case 0b10:
+							lreg = (lreg & 0xffff0000) | (rreg.get() & 0xffff0000) >> 16;
+							break;
+						case 0b01:
+							lreg = (lreg & 0xffff00ff) | (rreg.get() & 0x0000ff00) >> 4;
+							break;
+						case 0b00:
+							lreg = (rreg.get() & 0x000000ff);
+							break;
+						}
 						lreg = rreg;
 					}
 				}

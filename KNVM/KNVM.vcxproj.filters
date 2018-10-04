@@ -27,9 +27,6 @@
     <ClInclude Include="KNVM.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Emulator.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Disassembler.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -75,6 +72,9 @@
     <ClInclude Include="Operand.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="CodeGenerator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="KNVM.cpp">
@@ -102,6 +102,9 @@
       <Filter>소스 파일\UI</Filter>
     </ClCompile>
     <ClCompile Include="SyscallTable.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeGenerator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

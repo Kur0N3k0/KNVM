@@ -8,6 +8,7 @@
 namespace KNVM {
 	class Memory;
 	class Function;
+	class CodeGenerator;
 
 	class Asm {
 	protected:
@@ -117,5 +118,6 @@ namespace KNVM {
 		friend class Memory;
 		friend class Function;
 		friend class Label;
+		friend class CodeGenerator;
 	};
 }
