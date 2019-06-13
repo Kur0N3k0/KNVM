@@ -1435,6 +1435,7 @@ namespace KNVM {
 		if (value == 0)
 			setZF(reg);
 		if (value > prev_value) {
+			reg["flags"] = 0;
 			setCF(reg);
 			setOF(reg);
 		}
@@ -1532,8 +1533,10 @@ namespace KNVM {
 			}
 		}
 
-		if (value == 0)
+		if (value == 0) {
+			reg["flags"] = 0;
 			setZF(reg);
+		}
 
 		return typesize + opreg->getSize() + opreg2->getSize();
 	}

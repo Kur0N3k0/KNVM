@@ -88,7 +88,7 @@ namespace KNVM {
 			return *result;
 		}
 		Register<nType, default_val> &operator[](BYTE regop) {
-			DWORD idx = 0;
+			/*DWORD idx = 0;
 			if (regop != 0) {
 				idx = 1;
 				while (!(regop & 0b00000001)) {
@@ -97,6 +97,8 @@ namespace KNVM {
 				}
 			}
 			return reg[idx];
+			*/
+			return reg[regop];
 		}
 	};
 }

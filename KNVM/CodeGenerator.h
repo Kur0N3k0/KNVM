@@ -57,5 +57,6 @@ namespace KNVM {
 	public:
 		CodeGenerator();
 		CodeGenerator(BYTE *bytecode, DWORD size);
+		BYTE *generate();
 	};
 }

@@ -3,6 +3,7 @@
 #include "Optable.h"
 
 #include <string>
+#include <vector>
 #include <Windows.h>
 
 namespace KNVM {
@@ -34,16 +35,16 @@ namespace KNVM {
 				
 			*(DWORD *)&op[1] = val;
 		}
-		BYTE getRegByte(DWORD idx) { return (BYTE)(0b00000001 << (idx - 1)); }
-		BYTE getRegIdx(std::string &reg) {
-			BYTE i;
+		BYTE getRegByte(DWORD idx) { return (BYTE)idx; }//(BYTE)(0b00000001 << (idx - 1)); }
+		BYTE getRegIdx(std::string &r) {
+			BYTE i = 0;
 			for (i = 0; i < 8; i++)
-				if (reg == this->reg[i])
-					break;
-			return i;
+				if (r == this->reg[i])
+					return i;
+			return -1;
 		}
 
-		std::string reg[10] = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", "flags" };
+		std::vector<std::string> reg = { "eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip", "flags" };
 
 		BYTE code[10] = { 0, };
 		BYTE codesize;
